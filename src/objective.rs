@@ -1,11 +1,11 @@
-/// Calculates solution's performance scores. `N` is a number of performance
-/// metrics.
-pub trait Objective<const N: usize, S> {
+/// Represents solution's performance scores. `N` is a number of performance
+/// metrics. The goal value of each score is deemed to be 0.
+pub trait Objectives<const N: usize, S> {
   /// Returns solution's performance scores. The closer to 0 - the better.
   fn evaluate(&self, solution: &S) -> [f32; N];
 }
 
-impl<const N: usize, S, F> Objective<N, S> for [F; N]
+impl<const N: usize, S, F> Objectives<N, S> for [F; N]
 where
   F: Fn(&S) -> f32,
 {
@@ -14,7 +14,7 @@ where
   }
 }
 
-impl<S, F> Objective<1, S> for F
+impl<S, F> Objectives<1, S> for F
 where
   F: Fn(&S) -> f32,
 {
@@ -29,7 +29,7 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_objective<const N: usize, O: Objective<N, Solution>>(_: O) {}
+  fn as_objective<const N: usize, O: Objectives<N, Solution>>(_: O) {}
 
   #[test]
   fn test_objective_from_closure() {

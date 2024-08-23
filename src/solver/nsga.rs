@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use super::Solver;
 
 use crate::{
-  crossover::Crossover, mutator::Mutator, objective::Objective,
+  crossover::Crossover, mutator::Mutator, objective::Objectives,
   selector::Selector, terminator::Terminator,
 };
 
@@ -12,7 +12,7 @@ pub struct Nsga2<
   const OBJ_CNT: usize,
   const CRS_IN: usize,
   const CRS_OUT: usize,
-  Obj: Objective<OBJ_CNT, S>,
+  Obj: Objectives<OBJ_CNT, S>,
   Ter: Terminator<S>,
   Sel: Selector<S>,
   Crs: Crossover<CRS_IN, CRS_OUT, S>,
@@ -31,7 +31,7 @@ impl<
     const OBJ_CNT: usize,
     const CRS_IN: usize,
     const CRS_OUT: usize,
-    Obj: Objective<OBJ_CNT, S>,
+    Obj: Objectives<OBJ_CNT, S>,
     Ter: Terminator<S>,
     Sel: Selector<S>,
     Crs: Crossover<CRS_IN, CRS_OUT, S>,
