@@ -1,0 +1,15 @@
+[package]
+name = "moga"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = { version = "0.8.5", default-features = false, features = [
+    "std",
+    "small_rng",
+] }
+rayon = "1.10.0"
+
+[profile.dev.package."*"]
+opt-level = 1
+debug = true
