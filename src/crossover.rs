@@ -56,6 +56,15 @@ where
   }
 }
 
+impl<S, F> Crossover<{ usize::MAX }, { usize::MAX }, S> for F
+where
+  F: Fn(&[S]) -> Vec<S>,
+{
+  fn create(&self, solutions: &[S]) -> Vec<S> {
+    self(solutions)
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
