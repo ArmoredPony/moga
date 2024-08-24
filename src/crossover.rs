@@ -84,8 +84,10 @@ mod tests {
   fn test_crossover_1_to_1() {
     let c = |s: &Solution| s.to_owned() + 1.0;
     as_crossover(&c);
+
     let parents: Vec<_> = (0..100).map(Solution::from).collect();
     let offsprings = c.create(&parents);
+
     assert_eq!(parents.len(), offsprings.len());
     assert_eq!(c.create(&[]), &[]);
   }
@@ -94,9 +96,11 @@ mod tests {
   fn test_crossover_2_to_1() {
     let c = |a: &Solution, b: &Solution| a + b;
     as_crossover(&c);
+
     let parents: Vec<_> = (0..100).map(Solution::from).collect();
     let offsprings = c.create(&parents);
     assert_eq!(offsprings.len(), (0..parents.len()).sum());
+
     assert_eq!(c.create(&[]), &[]);
     assert_eq!(c.create(&[1.0]), &[]);
     assert_eq!(c.create(&[1.0, 2.0]), &[3.0]);
@@ -106,11 +110,34 @@ mod tests {
   fn test_crossover_2_to_2() {
     let c = |a: &Solution, b: &Solution| (a + b, a - b);
     as_crossover(&c);
+
     let parents: Vec<_> = (0..100).map(Solution::from).collect();
     let offsprings = c.create(&parents);
     assert_eq!(offsprings.len(), (0..parents.len()).sum::<usize>() * 2);
+
     assert_eq!(c.create(&[]), &[]);
     assert_eq!(c.create(&[1.0]), &[]);
     assert_eq!(c.create(&[1.0, 2.0]), &[3.0, -1.0]);
+  }
+
+  #[test]
+  fn test_crossover_n_to_m() {
+    let c = |solutions: &[Solution]| {
+      solutions
+        .chunks_exact(2)
+        .map(|p| Solution::max(p[0], p[1]))
+        .collect::<Vec<_>>()
+    };
+    as_crossover(&c);
+
+    let parents: Vec<_> = (0..100).map(Solution::from).collect();
+    let offsprings = c.create(&parents);
+    assert_eq!(offsprings.len(), parents.len() / 2);
+
+    assert_eq!(c.create(&[]), &[]);
+    assert_eq!(c.create(&[1.0]), &[]);
+    assert_eq!(c.create(&[1.0, 2.0]), &[2.0]);
+    assert_eq!(c.create(&[1.0, 2.0, 3.0]), &[2.0]);
+    assert_eq!(c.create(&[1.0, 2.0, 3.0, 4.0]), &[2.0, 4.0]);
   }
 }
