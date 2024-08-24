@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 /// Describes pareto dominance for arrays of floats.
-trait ParetoDominance {
+pub(crate) trait ParetoDominance {
   /// Returns `Less` if `self` dominates `other`, `Greater` if `other`
   /// dominates `Self`, otherwise `Equal`. `self` dominates `other` if all
   /// `self` values are closer to zero than respective `other` values.
