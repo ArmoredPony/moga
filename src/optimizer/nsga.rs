@@ -41,7 +41,7 @@ impl<
     Mut: Mutator<S>,
   > Optimizer<S> for Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
 {
-  fn run(mut self) {
+  fn run(mut self) -> Vec<S> {
     self.best_solutions = std::mem::take(&mut self.new_solutions)
       .into_par_iter()
       .map(|solution| {
@@ -49,11 +49,8 @@ impl<
         (solution, scores)
       })
       .collect();
-    if self.terminator.terminate(&self.best_solutions) {
-      return; // TODO: return what?
-    }
 
-    loop {
+    while !self.terminator.terminate(&self.best_solutions) {
       let selected_solutions = self.selector.select(&self.best_solutions);
       let created_solutions = self.crossover.create(&selected_solutions);
       let mut created_solutions_scores: Vec<_> = created_solutions
@@ -66,15 +63,12 @@ impl<
       created_solutions_scores
         .iter_mut()
         .for_each(|(s, _)| self.mutator.mutate(s));
-
       let mut all_solutions = std::mem::take(&mut self.best_solutions);
       all_solutions.append(&mut created_solutions_scores);
-      let best_solutions = self.select_best_solutions(all_solutions);
-      if self.terminator.terminate(&best_solutions) {
-        return; // TODO: return what???
-      }
-      self.best_solutions = best_solutions;
+      self.best_solutions = self.select_best_solutions(all_solutions);
     }
+
+    return self.best_solutions.into_iter().map(|(s, _)| s).collect();
   }
 }
 
