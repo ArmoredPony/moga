@@ -1,28 +1,38 @@
 use crate::objective::Scores;
+use rand::prelude::*;
+use rand::rngs::SmallRng;
 
 /// Performs selection of suitable solutions.
-pub trait Selector<const N: usize, S> {
+pub trait Selector<S, const N: usize> {
   /// Takes a slice of solutions and their scores and returns vector of
   /// selected solutions.
-  fn select<'a>(&self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S>;
+  fn select<'a>(&mut self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S>;
+}
+
+pub fn select_all<S, const N: usize>() -> impl Selector<S, N> {
+  SelectAll()
+}
+
+pub fn select_first<S, const N: usize>(n: usize) -> impl Selector<S, N> {
+  SelectFirst(n)
+}
+
+pub fn select_random<S, const N: usize>(n: usize) -> impl Selector<S, N> {
+  SelectRandom(n, SmallRng::from_entropy())
 }
 
 struct SelectAll();
 
-impl<const N: usize, S> Selector<N, S> for SelectAll {
-  fn select<'a>(&self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
+impl<const N: usize, S> Selector<S, N> for SelectAll {
+  fn select<'a>(&mut self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
     solutions_scores.iter().map(|(sol, _)| sol).collect()
   }
 }
 
-pub fn select_all<const N: usize, S>() -> impl Selector<N, S> {
-  SelectAll()
-}
-
 struct SelectFirst(usize);
 
-impl<const N: usize, S> Selector<N, S> for SelectFirst {
-  fn select<'a>(&self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
+impl<const N: usize, S> Selector<S, N> for SelectFirst {
+  fn select<'a>(&mut self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
     solutions_scores
       .iter()
       .take(self.0)
@@ -31,15 +41,23 @@ impl<const N: usize, S> Selector<N, S> for SelectFirst {
   }
 }
 
-pub fn select_first<const N: usize, S>(n: usize) -> impl Selector<N, S> {
-  SelectFirst(n)
+struct SelectRandom(usize, SmallRng);
+
+impl<const N: usize, S> Selector<S, N> for SelectRandom {
+  fn select<'a>(&mut self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
+    solutions_scores
+      .choose_multiple(&mut self.1, self.0)
+      .into_iter()
+      .map(|(sol, _)| sol)
+      .collect()
+  }
 }
 
-impl<const N: usize, S, F> Selector<N, S> for F
+impl<const N: usize, S, F> Selector<S, N> for F
 where
   F: for<'a> Fn(&'a [(S, Scores<N>)]) -> Vec<&'a S>,
 {
-  fn select<'a>(&self, solutions: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
+  fn select<'a>(&mut self, solutions: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
     self(solutions)
   }
 }
@@ -50,7 +68,7 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_selector<const N: usize, S: Selector<N, Solution>>(_: &S) {}
+  fn as_selector<const N: usize, S: Selector<Solution, N>>(_: &S) {}
 
   #[test]
   fn test_selector_from_fn() {
@@ -62,13 +80,19 @@ mod tests {
 
   #[test]
   fn test_selector_all() {
-    let s = select_all::<3, Solution>();
+    let s = select_all::<Solution, 3>();
     as_selector(&s);
   }
 
   #[test]
   fn test_selector_first() {
-    let s = select_first::<3, Solution>(10);
+    let s = select_first::<Solution, 3>(10);
+    as_selector(&s);
+  }
+
+  #[test]
+  fn test_select_random() {
+    let s = select_random::<Solution, 3>(10);
     as_selector(&s);
   }
 }

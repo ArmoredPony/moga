@@ -14,7 +14,7 @@ pub struct Nsga2<
   const CRS_OUT: usize,
   Obj: Objectives<OBJ_CNT, S>,
   Ter: Terminator<OBJ_CNT, S>,
-  Sel: Selector<OBJ_CNT, S>,
+  Sel: Selector<S, OBJ_CNT>,
   Crs: Crossover<CRS_IN, CRS_OUT, S>,
   Mut: Mutator<S>,
 > {
@@ -36,7 +36,7 @@ impl<
     const CRS_OUT: usize,
     Obj: Objectives<OBJ_CNT, S> + Sync,
     Ter: Terminator<OBJ_CNT, S>,
-    Sel: Selector<OBJ_CNT, S>,
+    Sel: Selector<S, OBJ_CNT>,
     Crs: Crossover<CRS_IN, CRS_OUT, S>,
     Mut: Mutator<S>,
   > Optimizer<S> for Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
@@ -79,7 +79,7 @@ impl<
     const CRS_OUT: usize,
     Obj: Objectives<OBJ_CNT, S> + Sync,
     Ter: Terminator<OBJ_CNT, S>,
-    Sel: Selector<OBJ_CNT, S>,
+    Sel: Selector<S, OBJ_CNT>,
     Crs: Crossover<CRS_IN, CRS_OUT, S>,
     Mut: Mutator<S>,
   > Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
