@@ -20,12 +20,12 @@ where
   }
 }
 
-impl<S, F> Objectives<1, S> for F
+impl<const N: usize, S, F> Objectives<N, S> for F
 where
-  F: Fn(&S) -> f32,
+  F: Fn(&S) -> Scores<N>,
 {
-  fn evaluate(&self, solution: &S) -> Scores<1> {
-    [self(solution)]
+  fn evaluate(&self, solution: &S) -> Scores<N> {
+    self(solution)
   }
 }
 
@@ -39,9 +39,9 @@ mod tests {
 
   #[test]
   fn test_objective_from_closure() {
-    let o = |v: &Solution| v * 2.0;
+    let o = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
     as_objective(&o);
-    assert_eq!(o.evaluate(&1.0), [2.0]);
+    assert_eq!(o.evaluate(&1.0), [1.0, 2.0, 3.0]);
   }
 
   #[test]
