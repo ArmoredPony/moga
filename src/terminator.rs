@@ -6,7 +6,7 @@ use crate::objective::Scores;
 pub trait Terminator<const N: usize, S> {
   /// Takes a slice of solutions and respective scores for each objective.
   /// If returns `true`, terminates algorithm's execution.
-  fn terminate(&mut self, solutions_scores: &[(&S, &Scores<N>)]) -> bool;
+  fn terminate(&mut self, solutions_scores: &[(S, Scores<N>)]) -> bool;
 }
 
 impl<const N: usize, S, F> Terminator<N, S> for F
@@ -14,7 +14,7 @@ where
   S: Sync,
   F: Fn(&S, &Scores<N>) -> bool + Sync,
 {
-  fn terminate(&mut self, solutions_scores: &[(&S, &Scores<N>)]) -> bool {
+  fn terminate(&mut self, solutions_scores: &[(S, Scores<N>)]) -> bool {
     solutions_scores.par_iter().any(|(sol, sc)| self(sol, sc))
   }
 }
@@ -32,7 +32,7 @@ impl GenerationCounter {
 }
 
 impl<const N: usize, S> Terminator<N, S> for GenerationCounter {
-  fn terminate(&mut self, _: &[(&S, &Scores<N>)]) -> bool {
+  fn terminate(&mut self, _: &[(S, Scores<N>)]) -> bool {
     match self.generations {
       0 => true,
       _ => {

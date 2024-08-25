@@ -4,7 +4,7 @@ use rayon::prelude::*;
 /// This operator spawns `M` offsprings from `N` parents.
 pub trait Crossover<const N: usize, const M: usize, S> {
   /// Takes a slice of selected solutions and returns created offsprings.
-  fn create(&self, solutions: &[S]) -> Vec<S>;
+  fn create(&self, solutions: &[&S]) -> Vec<S>;
 }
 
 impl<S, F> Crossover<1, 1, S> for F
@@ -12,8 +12,8 @@ where
   S: Send + Sync,
   F: Fn(&S) -> S + Sync,
 {
-  fn create(&self, solutions: &[S]) -> Vec<S> {
-    solutions.par_iter().map(self).collect()
+  fn create(&self, solutions: &[&S]) -> Vec<S> {
+    solutions.par_iter().map(|s| self(s)).collect()
   }
 }
 
@@ -22,7 +22,7 @@ where
   S: Send + Sync,
   F: Fn(&S, &S) -> S + Sync,
 {
-  fn create(&self, solutions: &[S]) -> Vec<S> {
+  fn create(&self, solutions: &[&S]) -> Vec<S> {
     if solutions.is_empty() {
       return vec![];
     }
@@ -42,7 +42,7 @@ where
   S: Send + Sync,
   F: Fn(&S, &S) -> (S, S) + Sync,
 {
-  fn create(&self, solutions: &[S]) -> Vec<S> {
+  fn create(&self, solutions: &[&S]) -> Vec<S> {
     if solutions.is_empty() {
       return vec![];
     }
@@ -58,9 +58,9 @@ where
 
 impl<S, F> Crossover<{ usize::MAX }, { usize::MAX }, S> for F
 where
-  F: Fn(&[S]) -> Vec<S>,
+  F: Fn(&[&S]) -> Vec<S>,
 {
-  fn create(&self, solutions: &[S]) -> Vec<S> {
+  fn create(&self, solutions: &[&S]) -> Vec<S> {
     self(solutions)
   }
 }
@@ -86,7 +86,7 @@ mod tests {
     as_crossover(&c);
 
     let parents: Vec<_> = (0..100).map(Solution::from).collect();
-    let offsprings = c.create(&parents);
+    let offsprings = c.create(&parents.iter().collect::<Vec<_>>());
 
     assert_eq!(parents.len(), offsprings.len());
     assert_eq!(c.create(&[]), &[]);
@@ -98,12 +98,13 @@ mod tests {
     as_crossover(&c);
 
     let parents: Vec<_> = (0..100).map(Solution::from).collect();
-    let offsprings = c.create(&parents);
+    let offsprings = c.create(&parents.iter().collect::<Vec<_>>());
+
     assert_eq!(offsprings.len(), (0..parents.len()).sum());
 
     assert_eq!(c.create(&[]), &[]);
-    assert_eq!(c.create(&[1.0]), &[]);
-    assert_eq!(c.create(&[1.0, 2.0]), &[3.0]);
+    assert_eq!(c.create(&[&1.0]), &[]);
+    assert_eq!(c.create(&[&1.0, &2.0]), &[3.0]);
   }
 
   #[test]
@@ -112,32 +113,34 @@ mod tests {
     as_crossover(&c);
 
     let parents: Vec<_> = (0..100).map(Solution::from).collect();
-    let offsprings = c.create(&parents);
+    let offsprings = c.create(&parents.iter().collect::<Vec<_>>());
+
     assert_eq!(offsprings.len(), (0..parents.len()).sum::<usize>() * 2);
 
     assert_eq!(c.create(&[]), &[]);
-    assert_eq!(c.create(&[1.0]), &[]);
-    assert_eq!(c.create(&[1.0, 2.0]), &[3.0, -1.0]);
+    assert_eq!(c.create(&[&1.0]), &[]);
+    assert_eq!(c.create(&[&1.0, &2.0]), &[3.0, -1.0]);
   }
 
   #[test]
   fn test_crossover_n_to_m() {
-    let c = |solutions: &[Solution]| {
+    let c = |solutions: &[&Solution]| {
       solutions
         .chunks_exact(2)
-        .map(|p| Solution::max(p[0], p[1]))
+        .map(|p| Solution::max(*p[0], *p[1]))
         .collect::<Vec<_>>()
     };
     as_crossover(&c);
 
     let parents: Vec<_> = (0..100).map(Solution::from).collect();
-    let offsprings = c.create(&parents);
+    let offsprings = c.create(&parents.iter().collect::<Vec<_>>());
+
     assert_eq!(offsprings.len(), parents.len() / 2);
 
     assert_eq!(c.create(&[]), &[]);
-    assert_eq!(c.create(&[1.0]), &[]);
-    assert_eq!(c.create(&[1.0, 2.0]), &[2.0]);
-    assert_eq!(c.create(&[1.0, 2.0, 3.0]), &[2.0]);
-    assert_eq!(c.create(&[1.0, 2.0, 3.0, 4.0]), &[2.0, 4.0]);
+    assert_eq!(c.create(&[&1.0]), &[]);
+    assert_eq!(c.create(&[&1.0, &2.0]), &[2.0]);
+    assert_eq!(c.create(&[&1.0, &2.0, &3.0]), &[2.0]);
+    assert_eq!(c.create(&[&1.0, &2.0, &3.0, &4.0]), &[2.0, 4.0]);
   }
 }

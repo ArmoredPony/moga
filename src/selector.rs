@@ -4,14 +4,14 @@ use crate::objective::Scores;
 pub trait Selector<const N: usize, S> {
   /// Takes a slice of solutions and their scores and returns vector of
   /// selected solutions.
-  fn select<'a>(&self, solutions_scores: &[(&'a S, &Scores<N>)]) -> Vec<&'a S>;
+  fn select<'a>(&self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S>;
 }
 
 struct SelectAll();
 
 impl<const N: usize, S> Selector<N, S> for SelectAll {
-  fn select<'a>(&self, solutions_scores: &[(&'a S, &Scores<N>)]) -> Vec<&'a S> {
-    solutions_scores.iter().map(|(sol, _)| *sol).collect()
+  fn select<'a>(&self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
+    solutions_scores.iter().map(|(sol, _)| sol).collect()
   }
 }
 
@@ -22,11 +22,11 @@ pub fn select_all<const N: usize, S>() -> impl Selector<N, S> {
 struct SelectFirst(usize);
 
 impl<const N: usize, S> Selector<N, S> for SelectFirst {
-  fn select<'a>(&self, solutions_scores: &[(&'a S, &Scores<N>)]) -> Vec<&'a S> {
+  fn select<'a>(&self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
     solutions_scores
       .iter()
       .take(self.0)
-      .map(|(sol, _)| *sol)
+      .map(|(sol, _)| sol)
       .collect()
   }
 }
@@ -37,9 +37,9 @@ pub fn select_first<const N: usize, S>(n: usize) -> impl Selector<N, S> {
 
 impl<const N: usize, S, F> Selector<N, S> for F
 where
-  F: for<'a> Fn(&[(&'a S, &Scores<N>)]) -> Vec<&'a S>,
+  F: for<'a> Fn(&'a [(S, Scores<N>)]) -> Vec<&'a S>,
 {
-  fn select<'a>(&self, solutions: &[(&'a S, &Scores<N>)]) -> Vec<&'a S> {
+  fn select<'a>(&self, solutions: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
     self(solutions)
   }
 }
@@ -54,10 +54,8 @@ mod tests {
 
   #[test]
   fn test_selector_from_fn() {
-    fn select_all<'a>(
-      solutions_scores: &[(&'a Solution, &Scores<3>)],
-    ) -> Vec<&'a Solution> {
-      solutions_scores.iter().map(|(sol, _)| *sol).collect()
+    fn select_all(solutions_scores: &[(Solution, Scores<3>)]) -> Vec<&Solution> {
+      solutions_scores.iter().map(|(sol, _)| sol).collect()
     }
     as_selector(&select_all);
   }
