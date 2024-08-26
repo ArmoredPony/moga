@@ -1,4 +1,4 @@
-use rand::{prelude::*, rngs::SmallRng};
+use rand::prelude::*;
 
 use crate::objective::Scores;
 
@@ -12,7 +12,7 @@ pub trait Selector<S, const N: usize> {
     scores: &[Scores<N>],
   ) -> Vec<&'a S>;
 }
-// TODO: add docs
+/// Selects all solutions. No discrimination whatsoever.
 pub struct AllSelector();
 
 impl<const N: usize, S> Selector<S, N> for AllSelector {
@@ -20,18 +20,20 @@ impl<const N: usize, S> Selector<S, N> for AllSelector {
     solutions.iter().collect()
   }
 }
-// TODO: add docs
-pub struct FirstSelector(usize);
+/// Selects `n` first solutions. 'First' doesn't mean the best, this selector
+/// just returns `n` solutions it sees first.
+pub struct FirstSelector(pub usize);
 
 impl<const N: usize, S> Selector<S, N> for FirstSelector {
   fn select<'a>(&mut self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
     solutions.iter().take(self.0).collect()
   }
 }
-// TODO: add docs
-pub struct RandomSelector(usize, SmallRng);
+/// Selects `n` random solutions. You may provide any type that implements
+/// `Rng` trait from [rand](https://crates.io/crates/rand) crate.
+pub struct RandomSelector<R: Rng>(pub usize, pub R);
 
-impl<const N: usize, S> Selector<S, N> for RandomSelector {
+impl<const N: usize, S, R: Rng> Selector<S, N> for RandomSelector<R> {
   fn select<'a>(&mut self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
     solutions.iter().choose_multiple(&mut self.1, self.0)
   }
@@ -91,7 +93,7 @@ mod tests {
 
   #[test]
   fn test_random_selector() {
-    let s = RandomSelector(10, SmallRng::from_entropy());
-    as_selector::<0, RandomSelector>(&s);
+    let s = RandomSelector(10, rand::thread_rng());
+    as_selector::<0, RandomSelector<_>>(&s);
   }
 }
