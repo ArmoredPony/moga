@@ -178,7 +178,9 @@ impl<
     for o_idx in 0..OBJ_CNT {
       // sort solutions by their scores of objective `o`
       last_front.sort_by(|&a_idx, &b_idx| {
-        scores[a_idx][o_idx].total_cmp(&scores[b_idx][o_idx])
+        scores[a_idx][o_idx]
+          .partial_cmp(&scores[b_idx][o_idx])
+          .expect("NaN encountered")
       });
       // get the first and the last front members
       let first_idx = last_front[0];
@@ -207,7 +209,9 @@ impl<
 
     // sort solutions in the last front by their crowding distances
     last_front.sort_by(|&a_idx, &b_idx| {
-      crowding_distances[b_idx].total_cmp(&crowding_distances[a_idx])
+      crowding_distances[b_idx]
+        .partial_cmp(&crowding_distances[a_idx])
+        .expect("NaN encountered")
     });
     // reset `best solution` flag for each excess solution in the last front
     for e_idx in last_front[front_solutions_count - solutions.len()..].iter() {
