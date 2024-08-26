@@ -23,7 +23,6 @@ pub struct Nsga2<
 > {
   solutions: Vec<S>,
   scores: Vec<Scores<OBJ_CNT>>,
-  new_solutions: Vec<S>,
   initial_population_size: usize,
   objective: Obj,
   terminator: Ter,
@@ -34,11 +33,11 @@ pub struct Nsga2<
 }
 
 impl<
-    S: Sync,
+    S,
     const OBJ_CNT: usize,
     const CRS_IN: usize,
     const CRS_OUT: usize,
-    Obj: Objectives<OBJ_CNT, S> + Sync,
+    Obj: Objectives<OBJ_CNT, S>,
     Ter: Terminator<S, OBJ_CNT>,
     Sel: Selector<S, OBJ_CNT>,
     Crs: Crossover<CRS_IN, CRS_OUT, S>,
@@ -47,7 +46,6 @@ impl<
   for Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
 {
   fn run(mut self) -> Vec<S> {
-    self.solutions = std::mem::take(&mut self.new_solutions);
     self.scores = self
       .solutions
       .iter()
@@ -80,18 +78,43 @@ impl<
 }
 
 impl<
-    S: Sync,
+    S,
     const OBJ_CNT: usize,
     const CRS_IN: usize,
     const CRS_OUT: usize,
-    Obj: Objectives<OBJ_CNT, S> + Sync,
+    Obj: Objectives<OBJ_CNT, S>,
     Ter: Terminator<S, OBJ_CNT>,
     Sel: Selector<S, OBJ_CNT>,
     Crs: Crossover<CRS_IN, CRS_OUT, S>,
     Mut: Mutator<S>,
   > Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
 {
-  // really really really want to refactor this mess
+  pub fn new(
+    initial_population: Vec<S>,
+    objective: Obj,
+    terminator: Ter,
+    selector: Sel,
+    crossover: Crs,
+    mutator: Mut,
+  ) -> Self {
+    assert!(
+      !initial_population.is_empty(),
+      "initial population cannot be empty"
+    );
+    Self {
+      initial_population_size: initial_population.len(),
+      solutions: initial_population,
+      scores: Vec::new(),
+      objective,
+      terminator,
+      selector,
+      crossover,
+      mutator,
+      _solution: PhantomData,
+    }
+  }
+
+  // TODO: really really really want to refactor this mess
   fn select_best_solutions(
     &mut self,
     solutions: Vec<S>,
@@ -100,23 +123,23 @@ impl<
     type SolutionIndex = usize; // index of solution in `solutions` vector
     type DominanceCounter = u32; // number of solution's dominators
     type CrowdingDistance = f64; // crowding distance of a solution
-    type IsBestSolution = bool; // if `true`, solution will be selected
+    type FrontNumber = u32; // front number. the lower - the better
 
     // contains dominated solutions with their indicies by each solution
     let mut dominance_lists: Vec<Vec<SolutionIndex>>;
     // contains number of solutions dominating each solution
     let mut dominance_counters: Vec<DominanceCounter>;
-    // contains crowding distance for each solution
+    // contains from numbers of each solution
+    let mut front_numbers: Vec<FrontNumber>;
+    // contains crowding distance on each solution
     let mut crowding_distances: Vec<CrowdingDistance>;
-    // if a solution belongs to the best ones, the corresponding value is `true`
-    let mut best_solutions_list: Vec<IsBestSolution>;
     // indicies of solutions of the first front
     let mut first_front: Vec<SolutionIndex>;
 
     dominance_lists = vec![Vec::new(); solutions.len()];
     dominance_counters = vec![0; solutions.len()];
+    front_numbers = vec![FrontNumber::MAX; solutions.len()];
     crowding_distances = vec![0.0; solutions.len()];
-    best_solutions_list = vec![false; solutions.len()];
     first_front = Vec::new();
 
     // fill dominance sets and counters
@@ -150,11 +173,18 @@ impl<
         first_front.push(p_idx); // put its index into the first front
       }
     }
+    debug_assert!(
+      !first_front.is_empty(),
+      "first front must have at least 1 solution"
+    );
 
     let mut last_front = first_front;
-    let mut front_solutions_count = last_front.len();
+    let mut new_solutions_indicies: Vec<SolutionIndex> = Vec::new();
+    let mut front_idx = 0;
     // while last front isn't empty and we haven't found enough solutions...
-    while !last_front.is_empty() && front_solutions_count < solutions.len() {
+    while !last_front.is_empty()
+      && new_solutions_indicies.len() + last_front.len() < solutions.len()
+    {
       let mut next_front = Vec::new();
       // for each solution `p` in last front...
       for p_idx in last_front.iter() {
@@ -164,13 +194,14 @@ impl<
           dominance_counters[*q_idx] -= 1;
           // if no more solutions dominate `q`...
           if dominance_counters[*q_idx] == 0 {
-            best_solutions_list[*q_idx] = true; // mark it as one of the best
+            front_numbers[*q_idx] = front_idx; // set front number of solution
             next_front.push(*q_idx); // and push its index into next front
           }
         }
       }
-      front_solutions_count += next_front.len();
+      new_solutions_indicies.append(&mut last_front);
       last_front = next_front;
+      front_idx += 1;
     }
 
     // calculate crowding distance for each solution in the last found front
@@ -209,28 +240,32 @@ impl<
 
     // sort solutions in the last front by their crowding distances
     last_front.sort_by(|&a_idx, &b_idx| {
-      crowding_distances[b_idx]
-        .partial_cmp(&crowding_distances[a_idx])
-        .expect("NaN encountered")
+      front_numbers[a_idx].cmp(&front_numbers[b_idx]).then({
+        crowding_distances[b_idx].total_cmp(&crowding_distances[a_idx])
+      })
     });
-    // reset `best solution` flag for each excess solution in the last front
-    for e_idx in last_front[front_solutions_count - solutions.len()..].iter() {
-      best_solutions_list[*e_idx] = false;
+
+    new_solutions_indicies.append(&mut last_front);
+    new_solutions_indicies.truncate(self.initial_population_size);
+    // FIXME: avoid this allocation somehow
+    let mut best_solutions_flags = vec![false; solutions.len()];
+    for idx in new_solutions_indicies.iter() {
+      best_solutions_flags[*idx] = true;
     }
 
-    let (new_sols, new_scs): (Vec<S>, Vec<Scores<OBJ_CNT>>) = solutions
-      .into_iter()
-      .zip(scores)
-      .zip(best_solutions_list)
-      .filter_map(|(sol_sc, is_best)| is_best.then_some(sol_sc))
-      .unzip();
+    let (new_sols, new_scs): (Vec<S>, Vec<Scores<OBJ_CNT>>) =
+      best_solutions_flags
+        .into_iter()
+        .zip(solutions.into_iter().zip(scores))
+        .filter_map(|(is_best, (sol, sc))| is_best.then_some((sol, sc)))
+        .unzip();
 
-    assert_eq!(
+    debug_assert_eq!(
       new_sols.len(),
       self.initial_population_size,
       "new population size must match initial population size"
     );
-    assert_eq!(
+    debug_assert_eq!(
       new_sols.len(),
       new_scs.len(),
       "number of solutions must match number of scores"
