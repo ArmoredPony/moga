@@ -17,21 +17,31 @@ where
   }
 }
 
-/// A `Terminator` that ignores solutions and terminates the algorithm when a
-/// certain number of generations has passed.
-pub struct GenerationCounter {
-  generations: usize,
-}
+/// `Terminator` that ignores solutions and terminates the algorithm as soon
+/// as a certain number of generations has passed.
+pub struct GenerationsTerminator(usize); // TODO: add tests
 
-impl<'a, const N: usize, S: 'a> Terminator<'a, S, N> for GenerationCounter {
+impl<'a, const N: usize, S: 'a> Terminator<'a, S, N> for GenerationsTerminator {
   fn terminate(&mut self, _: &[S], _: &[Scores<N>]) -> bool {
-    match self.generations {
+    match self.0 {
       0 => true,
       _ => {
-        self.generations -= 1;
+        self.0 -= 1;
         false
       }
     }
+  }
+}
+
+/// `Terminator` that returns true if exists at least one solution, which
+/// scores values are less than or equal to respective target scores values.
+pub struct ScoresTerminator<const N: usize>(Scores<N>); // TODO: add tests
+
+impl<'a, const N: usize, S: 'a> Terminator<'a, S, N> for ScoresTerminator<N> {
+  fn terminate(&mut self, _: &[S], scores: &[Scores<N>]) -> bool {
+    scores
+      .iter()
+      .any(|s| s.iter().zip(self.0.iter()).all(|(&a, &b)| a <= b))
   }
 }
 
