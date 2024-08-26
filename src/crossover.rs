@@ -1,5 +1,3 @@
-use rayon::prelude::*;
-
 /// Creates new solutions from previously selected.
 /// This operator spawns `M` offsprings from `N` parents.
 pub trait Crossover<const N: usize, const M: usize, S> {
@@ -9,18 +7,16 @@ pub trait Crossover<const N: usize, const M: usize, S> {
 
 impl<S, F> Crossover<1, 1, S> for F
 where
-  S: Send + Sync,
-  F: Fn(&S) -> S + Sync,
+  F: Fn(&S) -> S,
 {
   fn create(&self, solutions: &[&S]) -> Vec<S> {
-    solutions.par_iter().map(|s| self(s)).collect()
+    solutions.iter().map(|s| self(s)).collect()
   }
 }
 
 impl<S, F> Crossover<2, 1, S> for F
 where
-  S: Send + Sync,
-  F: Fn(&S, &S) -> S + Sync,
+  F: Fn(&S, &S) -> S,
 {
   fn create(&self, solutions: &[&S]) -> Vec<S> {
     if solutions.is_empty() {
@@ -30,7 +26,6 @@ where
       .flat_map(|i| {
         (i + 1..solutions.len()).map(move |j| (&solutions[i], &solutions[j]))
       })
-      .par_bridge()
       .map(|(a, b)| self(a, b))
       .collect()
   }
@@ -39,8 +34,7 @@ where
 // tuple-to-array conversion can be implemented with a macro
 impl<S, F> Crossover<2, 2, S> for F
 where
-  S: Send + Sync,
-  F: Fn(&S, &S) -> (S, S) + Sync,
+  F: Fn(&S, &S) -> (S, S),
 {
   fn create(&self, solutions: &[&S]) -> Vec<S> {
     if solutions.is_empty() {
@@ -50,7 +44,6 @@ where
       .flat_map(|i| {
         (i + 1..solutions.len()).map(move |j| (&solutions[i], &solutions[j]))
       })
-      .par_bridge()
       .flat_map(|(a, b)| <[S; 2]>::from(self(a, b)))
       .collect()
   }
