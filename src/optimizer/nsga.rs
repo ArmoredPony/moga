@@ -74,7 +74,7 @@ impl<
       self.best_solutions = self.select_best_solutions(all_solutions);
     }
 
-    return self.best_solutions.into_iter().map(|(s, _)| s).collect();
+    self.best_solutions.into_iter().map(|(s, _)| s).collect()
   }
 }
 
