@@ -75,10 +75,8 @@ impl<
       solutions.append(&mut created_solutions);
       scores.append(&mut created_scores);
 
-      let (new_solutions, new_scores) =
+      (self.solutions, self.scores) =
         self.select_best_solutions(solutions, scores);
-      self.solutions = new_solutions;
-      self.scores = new_scores;
     }
 
     self.solutions
