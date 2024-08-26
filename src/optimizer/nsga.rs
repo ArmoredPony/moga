@@ -54,15 +54,11 @@ impl<
       .map(|s| self.objective.evaluate(s))
       .collect();
 
-    while !self
-      .terminator
-      .terminate(self.solutions.iter().zip(self.scores.iter()))
-    {
+    while !self.terminator.terminate(&self.solutions, &self.scores) {
       let mut solutions = std::mem::take(&mut self.solutions);
       let mut scores = std::mem::take(&mut self.scores);
 
-      let selected_solutions =
-        self.selector.select(solutions.iter().zip(scores.iter()));
+      let selected_solutions = self.selector.select(&solutions, &scores);
       let mut created_solutions = self.crossover.create(&selected_solutions);
       created_solutions
         .iter_mut()

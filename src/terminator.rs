@@ -2,12 +2,9 @@ use crate::objective::Scores;
 
 /// Terminates algorithm's execution based on some condition.
 pub trait Terminator<'a, S: 'a, const N: usize> {
-  /// Takes a slice of solutions and respective scores for each objective.
+  /// Takes slices of solutions and their respective scores.
   /// If returns `true`, terminates algorithm's execution.
-  fn terminate(
-    &mut self,
-    solutions_scores: impl Iterator<Item = (&'a S, &'a Scores<N>)>,
-  ) -> bool;
+  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool;
 }
 
 impl<'a, const N: usize, S: 'a, F> Terminator<'a, S, N> for F
@@ -15,11 +12,8 @@ where
   S: Sync,
   F: Fn(&S, &Scores<N>) -> bool + Sync,
 {
-  fn terminate(
-    &mut self,
-    mut solutions_scores: impl Iterator<Item = (&'a S, &'a Scores<N>)>,
-  ) -> bool {
-    solutions_scores.any(|(sol, sc)| self(sol, sc))
+  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool {
+    solutions.iter().zip(scores).any(|(sol, sc)| self(sol, sc))
   }
 }
 
@@ -30,10 +24,7 @@ pub struct GenerationCounter {
 }
 
 impl<'a, const N: usize, S: 'a> Terminator<'a, S, N> for GenerationCounter {
-  fn terminate(
-    &mut self,
-    solutions_scores: impl Iterator<Item = (&'a S, &'a Scores<N>)>,
-  ) -> bool {
+  fn terminate(&mut self, _: &[S], _: &[Scores<N>]) -> bool {
     match self.generations {
       0 => true,
       _ => {
