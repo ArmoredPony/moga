@@ -103,10 +103,10 @@ impl<
     solutions: Vec<S>,
     scores: Vec<Scores<OBJ_CNT>>,
   ) -> (Vec<S>, Vec<Scores<OBJ_CNT>>) {
-    type SolutionIndex = usize;
-    type DominanceCounter = u32;
-    type CrowdingDistance = f64;
-    type IsBestSolution = bool;
+    type SolutionIndex = usize; // index of solution in `solutions` vector
+    type DominanceCounter = u32; // number of solution's dominators
+    type CrowdingDistance = f64; // crowding distance of a solution
+    type IsBestSolution = bool; // if `true`, solution will be selected
 
     // contains dominated solutions with their indicies by each solution
     let mut dominance_lists: Vec<Vec<SolutionIndex>>;
