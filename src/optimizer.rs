@@ -1,4 +1,6 @@
-mod nsga;
+pub mod nsga;
+
+pub use nsga::*;
 
 /// Represents an abstract optimizer.
 pub trait Optimizer<S> {

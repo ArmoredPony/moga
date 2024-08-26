@@ -5,9 +5,9 @@ pub mod optimizer;
 pub mod selector;
 pub mod terminator;
 
-pub use crossover::Crossover;
-pub use mutator::Mutator;
-pub use objective::{Objectives, Scores};
-pub use optimizer::Optimizer;
-pub use selector::Selector;
-pub use terminator::Terminator;
+pub use crossover::*;
+pub use mutator::*;
+pub use objective::*;
+pub use optimizer::*;
+pub use selector::*;
+pub use terminator::*;
