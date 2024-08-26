@@ -1,12 +1,15 @@
+use rand::{prelude::*, rngs::SmallRng};
+
 use crate::objective::Scores;
-use rand::prelude::*;
-use rand::rngs::SmallRng;
 
 /// Performs selection of suitable solutions.
 pub trait Selector<S, const N: usize> {
   /// Takes a slice of solutions and their scores and returns vector of
   /// selected solutions.
-  fn select<'a>(&mut self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S>;
+  fn select<'a>(
+    &mut self,
+    solutions_scores: &'a [(S, Scores<N>)],
+  ) -> Vec<&'a S>;
 }
 
 pub fn select_all<S, const N: usize>() -> impl Selector<S, N> {
@@ -24,7 +27,10 @@ pub fn select_random<S, const N: usize>(n: usize) -> impl Selector<S, N> {
 struct SelectAll();
 
 impl<const N: usize, S> Selector<S, N> for SelectAll {
-  fn select<'a>(&mut self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
+  fn select<'a>(
+    &mut self,
+    solutions_scores: &'a [(S, Scores<N>)],
+  ) -> Vec<&'a S> {
     solutions_scores.iter().map(|(sol, _)| sol).collect()
   }
 }
@@ -32,7 +38,10 @@ impl<const N: usize, S> Selector<S, N> for SelectAll {
 struct SelectFirst(usize);
 
 impl<const N: usize, S> Selector<S, N> for SelectFirst {
-  fn select<'a>(&mut self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
+  fn select<'a>(
+    &mut self,
+    solutions_scores: &'a [(S, Scores<N>)],
+  ) -> Vec<&'a S> {
     solutions_scores
       .iter()
       .take(self.0)
@@ -44,10 +53,12 @@ impl<const N: usize, S> Selector<S, N> for SelectFirst {
 struct SelectRandom(usize, SmallRng);
 
 impl<const N: usize, S> Selector<S, N> for SelectRandom {
-  fn select<'a>(&mut self, solutions_scores: &'a [(S, Scores<N>)]) -> Vec<&'a S> {
+  fn select<'a>(
+    &mut self,
+    solutions_scores: &'a [(S, Scores<N>)],
+  ) -> Vec<&'a S> {
     solutions_scores
       .choose_multiple(&mut self.1, self.0)
-      .into_iter()
       .map(|(sol, _)| sol)
       .collect()
   }
@@ -72,7 +83,9 @@ mod tests {
 
   #[test]
   fn test_selector_from_fn() {
-    fn select_all(solutions_scores: &[(Solution, Scores<3>)]) -> Vec<&Solution> {
+    fn select_all(
+      solutions_scores: &[(Solution, Scores<3>)],
+    ) -> Vec<&Solution> {
       solutions_scores.iter().map(|(sol, _)| sol).collect()
     }
     as_selector(&select_all);

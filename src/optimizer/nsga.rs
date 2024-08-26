@@ -1,10 +1,15 @@
+use std::{cmp::Ordering, marker::PhantomData};
+
 use rayon::prelude::*;
-use std::cmp::Ordering;
-use std::marker::PhantomData;
 
 use crate::{
   objective::{pareto::ParetoDominance, Scores},
-  Crossover, Mutator, Objectives, Optimizer, Selector, Terminator,
+  Crossover,
+  Mutator,
+  Objectives,
+  Optimizer,
+  Selector,
+  Terminator,
 };
 
 pub struct Nsga2<
@@ -39,7 +44,8 @@ impl<
     Sel: Selector<S, OBJ_CNT>,
     Crs: Crossover<CRS_IN, CRS_OUT, S>,
     Mut: Mutator<S>,
-  > Optimizer<S> for Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
+  > Optimizer<S>
+  for Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
 {
   fn run(mut self) -> Vec<S> {
     self.best_solutions = std::mem::take(&mut self.new_solutions)
@@ -174,14 +180,16 @@ impl<
         let next_sol_score = solutions[2].1 .1[obj_idx]; // cd[i+1]
         let mut cur_solution = solutions[1];
         // cd[i] = cd[i] + (cd[i+1] - cd[i-1]) / (max - min)
-        cur_solution.2 += f64::from(next_sol_score - prev_sol_score) / score_diff
+        cur_solution.2 +=
+          f64::from(next_sol_score - prev_sol_score) / score_diff
       }
     }
 
     // sort solutions in the last front by their crowding distances
     last_front.sort_by(|a, b| b.2.total_cmp(&a.2));
     // reset `best solution` flag for each excess solution in the last front
-    for excess in last_front[front_solutions_count - population.len()..].iter() {
+    for excess in last_front[front_solutions_count - population.len()..].iter()
+    {
       best_solutions_list[excess.0] = false;
     }
 
