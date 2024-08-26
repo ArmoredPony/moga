@@ -124,7 +124,7 @@ impl<
     first_front = Vec::new();
 
     // fill dominance sets and counters
-    for p_idx in 0..solutions.len() - 1 {
+    for p_idx in 0..solutions.len() {
       // for each unique pair of solutions `p`...
       let (p_sc, rest_scs) =
         scores[p_idx..].split_first().expect("no scores remain");
