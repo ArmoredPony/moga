@@ -8,6 +8,6 @@ pub mod terminator;
 pub use crossover::Crossover;
 pub use mutator::Mutator;
 pub use objective::{Objectives, Scores};
-pub use optimizer::{Optimizer, Solutions};
+pub use optimizer::Optimizer;
 pub use selector::Selector;
 pub use terminator::Terminator;
