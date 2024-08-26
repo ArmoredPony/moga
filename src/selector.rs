@@ -12,38 +12,26 @@ pub trait Selector<S, const N: usize> {
     scores: &[Scores<N>],
   ) -> Vec<&'a S>;
 }
+// TODO: add docs
+pub struct AllSelector();
 
-pub fn select_all<S, const N: usize>() -> impl Selector<S, N> {
-  SelectAll()
-}
-
-pub fn select_first<S, const N: usize>(n: usize) -> impl Selector<S, N> {
-  SelectFirst(n)
-}
-
-pub fn select_random<S, const N: usize>(n: usize) -> impl Selector<S, N> {
-  SelectRandom(n, SmallRng::from_entropy())
-}
-
-struct SelectAll();
-
-impl<const N: usize, S> Selector<S, N> for SelectAll {
+impl<const N: usize, S> Selector<S, N> for AllSelector {
   fn select<'a>(&mut self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
     solutions.iter().collect()
   }
 }
+// TODO: add docs
+pub struct FirstSelector(usize);
 
-struct SelectFirst(usize);
-
-impl<const N: usize, S> Selector<S, N> for SelectFirst {
+impl<const N: usize, S> Selector<S, N> for FirstSelector {
   fn select<'a>(&mut self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
     solutions.iter().take(self.0).collect()
   }
 }
+// TODO: add docs
+pub struct RandomSelector(usize, SmallRng);
 
-struct SelectRandom(usize, SmallRng);
-
-impl<const N: usize, S> Selector<S, N> for SelectRandom {
+impl<const N: usize, S> Selector<S, N> for RandomSelector {
   fn select<'a>(&mut self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
     solutions.iter().choose_multiple(&mut self.1, self.0)
   }
@@ -90,20 +78,20 @@ mod tests {
   }
 
   #[test]
-  fn test_selector_all() {
-    let s = select_all::<Solution, 3>();
-    as_selector(&s);
+  fn test_all_selector() {
+    let s = AllSelector();
+    as_selector::<0, AllSelector>(&s);
   }
 
   #[test]
-  fn test_selector_first() {
-    let s = select_first::<Solution, 3>(10);
-    as_selector(&s);
+  fn test_first_selector() {
+    let s = FirstSelector(10);
+    as_selector::<0, FirstSelector>(&s);
   }
 
   #[test]
-  fn test_select_random() {
-    let s = select_random::<Solution, 3>(10);
-    as_selector(&s);
+  fn test_random_selector() {
+    let s = RandomSelector(10, SmallRng::from_entropy());
+    as_selector::<0, RandomSelector>(&s);
   }
 }
