@@ -1,21 +1,25 @@
-use rayon::prelude::*;
-
 use crate::objective::Scores;
 
 /// Terminates algorithm's execution based on some condition.
-pub trait Terminator<const N: usize, S> {
+pub trait Terminator<'a, S: 'a, const N: usize> {
   /// Takes a slice of solutions and respective scores for each objective.
   /// If returns `true`, terminates algorithm's execution.
-  fn terminate(&mut self, solutions_scores: &[(S, Scores<N>)]) -> bool;
+  fn terminate(
+    &mut self,
+    solutions_scores: impl Iterator<Item = (&'a S, &'a Scores<N>)>,
+  ) -> bool;
 }
 
-impl<const N: usize, S, F> Terminator<N, S> for F
+impl<'a, const N: usize, S: 'a, F> Terminator<'a, S, N> for F
 where
   S: Sync,
   F: Fn(&S, &Scores<N>) -> bool + Sync,
 {
-  fn terminate(&mut self, solutions_scores: &[(S, Scores<N>)]) -> bool {
-    solutions_scores.par_iter().any(|(sol, sc)| self(sol, sc))
+  fn terminate(
+    &mut self,
+    mut solutions_scores: impl Iterator<Item = (&'a S, &'a Scores<N>)>,
+  ) -> bool {
+    solutions_scores.any(|(sol, sc)| self(sol, sc))
   }
 }
 
@@ -25,14 +29,11 @@ pub struct GenerationCounter {
   generations: usize,
 }
 
-impl GenerationCounter {
-  pub fn new(generations: usize) -> Self {
-    Self { generations }
-  }
-}
-
-impl<const N: usize, S> Terminator<N, S> for GenerationCounter {
-  fn terminate(&mut self, _: &[(S, Scores<N>)]) -> bool {
+impl<'a, const N: usize, S: 'a> Terminator<'a, S, N> for GenerationCounter {
+  fn terminate(
+    &mut self,
+    solutions_scores: impl Iterator<Item = (&'a S, &'a Scores<N>)>,
+  ) -> bool {
     match self.generations {
       0 => true,
       _ => {
@@ -49,7 +50,7 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_terminator<const N: usize, T: Terminator<N, Solution>>(_: &T) {}
+  fn as_terminator<'a, const N: usize, T: Terminator<'a, Solution, N>>(_: &T) {}
 
   #[test]
   fn test_terminator_from_closure() {
