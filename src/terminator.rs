@@ -19,7 +19,7 @@ where
 
 /// `Terminator` that ignores solutions and terminates the algorithm as soon
 /// as a certain number of generations has passed.
-pub struct GenerationsTerminator(usize); // TODO: add tests
+pub struct GenerationsTerminator(usize);
 
 impl<const N: usize, S> Terminator<S, N> for GenerationsTerminator {
   fn terminate(&mut self, _: &[S], _: &[Scores<N>]) -> bool {
@@ -35,7 +35,7 @@ impl<const N: usize, S> Terminator<S, N> for GenerationsTerminator {
 
 /// `Terminator` that returns true if exists at least one solution, which
 /// scores values are less than or equal to respective target scores values.
-pub struct ScoresTerminator<const N: usize>(Scores<N>); // TODO: add tests
+pub struct ScoresTerminator<const N: usize>(Scores<N>);
 
 impl<const N: usize, S> Terminator<S, N> for ScoresTerminator<N> {
   fn terminate(&mut self, _: &[S], scores: &[Scores<N>]) -> bool {
@@ -59,5 +59,17 @@ mod tests {
       *solution > 0.0 && scores.iter().sum::<f32>() == 0.0
     };
     as_terminator(&t);
+  }
+
+  #[test]
+  fn test_generations_terminator() {
+    let t = GenerationsTerminator(100);
+    as_terminator::<0, GenerationsTerminator>(&t);
+  }
+
+  #[test]
+  fn test_scores_terminator() {
+    let t = ScoresTerminator([1.0, 2.0, 3.0]);
+    as_terminator::<3, ScoresTerminator<3>>(&t);
   }
 }
