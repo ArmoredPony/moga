@@ -1,13 +1,13 @@
 use crate::objective::Scores;
 
 /// Terminates algorithm's execution based on some condition.
-pub trait Terminator<'a, S: 'a, const N: usize> {
+pub trait Terminator<S, const N: usize> {
   /// Takes slices of solutions and their respective scores.
   /// If returns `true`, terminates algorithm's execution.
   fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool;
 }
 
-impl<'a, const N: usize, S: 'a, F> Terminator<'a, S, N> for F
+impl<const N: usize, S, F> Terminator<S, N> for F
 where
   S: Sync,
   F: Fn(&S, &Scores<N>) -> bool + Sync,
@@ -21,7 +21,7 @@ where
 /// as a certain number of generations has passed.
 pub struct GenerationsTerminator(usize); // TODO: add tests
 
-impl<'a, const N: usize, S: 'a> Terminator<'a, S, N> for GenerationsTerminator {
+impl<const N: usize, S> Terminator<S, N> for GenerationsTerminator {
   fn terminate(&mut self, _: &[S], _: &[Scores<N>]) -> bool {
     match self.0 {
       0 => true,
@@ -37,7 +37,7 @@ impl<'a, const N: usize, S: 'a> Terminator<'a, S, N> for GenerationsTerminator {
 /// scores values are less than or equal to respective target scores values.
 pub struct ScoresTerminator<const N: usize>(Scores<N>); // TODO: add tests
 
-impl<'a, const N: usize, S: 'a> Terminator<'a, S, N> for ScoresTerminator<N> {
+impl<const N: usize, S> Terminator<S, N> for ScoresTerminator<N> {
   fn terminate(&mut self, _: &[S], scores: &[Scores<N>]) -> bool {
     scores
       .iter()
@@ -51,7 +51,7 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_terminator<'a, const N: usize, T: Terminator<'a, Solution, N>>(_: &T) {}
+  fn as_terminator<const N: usize, T: Terminator<Solution, N>>(_: &T) {}
 
   #[test]
   fn test_terminator_from_closure() {
