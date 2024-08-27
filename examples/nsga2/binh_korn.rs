@@ -1,3 +1,5 @@
+use std::{io::Write, path::Path};
+
 use moga::*;
 use rand::prelude::*;
 use rand_distr::Normal;
@@ -41,8 +43,8 @@ fn main() {
     ((x3, y3), (x4, y4))
   };
 
-  // mutator based on random values from normal disribution
-  let normal = Normal::new(0.0, 1.0).unwrap(); // from 'rand_distr'
+  // mutator based on random values from normal disribution...
+  let normal = Normal::new(0.0, 1.0).unwrap(); // which comes from 'rand_distr'
   let mutator = |s: &mut S| {
     s.0 += normal.sample(&mut rand::thread_rng());
     s.1 += normal.sample(&mut rand::thread_rng());
@@ -51,11 +53,24 @@ fn main() {
   let nsga = Nsga2::new(
     population, objectives, terminator, selector, crossover, mutator,
   );
-  let results = nsga.run();
+  let solutions = nsga.run();
 
-  // take 10 random results and print them
+  // write solutions to file in examples/nsga2/binh_korn.csv
+  let _ =
+    std::fs::File::create(Path::new(file!()).with_file_name("binh_korn.csv"))
+      .unwrap()
+      .write_all(
+        solutions
+          .iter()
+          .map(|s| format!("{} {}", f1(s), f2(s)))
+          .collect::<Vec<_>>()
+          .join("\n")
+          .as_bytes(),
+      );
+
+  // and print first 10 solutions
   println!("   x   |   y   ");
-  for (x, y) in results
+  for (x, y) in solutions
     .into_iter()
     .choose_multiple(&mut rand::thread_rng(), 10)
   {
