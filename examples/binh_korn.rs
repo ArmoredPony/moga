@@ -1,5 +1,6 @@
 use moga::*;
 use rand::prelude::*;
+use rand_distr::Normal;
 
 fn main() {
   // our 'solution' type represented by a pair of floating point valeus
@@ -40,8 +41,12 @@ fn main() {
     ((x3, y3), (x4, y4))
   };
 
-  // and no mutator
-  let mutator = NoMutator();
+  // mutator based on random values from normal disribution
+  let normal = Normal::new(0.0, 1.0).unwrap(); // from 'rand_distr'
+  let mutator = |s: &mut S| {
+    s.0 += normal.sample(&mut rand::thread_rng());
+    s.1 += normal.sample(&mut rand::thread_rng());
+  };
 
   let nsga = Nsga2::new(
     population, objectives, terminator, selector, crossover, mutator,
