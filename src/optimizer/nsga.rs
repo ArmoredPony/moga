@@ -136,7 +136,7 @@ impl<
     type CrowdingDistance = f64; // crowding distance of a solution
     type FrontNumber = u32; // front number. the lower - the better
 
-    // contains dominated solutions with their indicies by each solution
+    // contains dominated solutions with their indices by each solution
     let mut dominance_lists: Vec<Vec<SolutionIndex>>;
     // contains number of solutions dominating each solution
     let mut dominance_counters: Vec<DominanceCounter>;
@@ -144,7 +144,7 @@ impl<
     let mut front_numbers: Vec<FrontNumber>;
     // contains crowding distance on each solution
     let mut crowding_distances: Vec<CrowdingDistance>;
-    // indicies of solutions of the first front
+    // indices of solutions of the first front
     let mut first_front: Vec<SolutionIndex>;
 
     dominance_lists = vec![Vec::new(); solutions.len()];
@@ -190,11 +190,11 @@ impl<
     );
 
     let mut last_front = first_front;
-    let mut new_solutions_indicies: Vec<SolutionIndex> = Vec::new();
+    let mut new_solutions_indices: Vec<SolutionIndex> = Vec::new();
     let mut front_idx = 0;
     // while last front isn't empty and we haven't found enough solutions...
     while !last_front.is_empty()
-      && new_solutions_indicies.len() + last_front.len() < solutions.len()
+      && new_solutions_indices.len() + last_front.len() < solutions.len()
     {
       let mut next_front = Vec::new();
       // for each solution `p` in last front...
@@ -210,7 +210,7 @@ impl<
           }
         }
       }
-      new_solutions_indicies.append(&mut last_front);
+      new_solutions_indices.append(&mut last_front);
       last_front = next_front;
       front_idx += 1;
     }
@@ -256,11 +256,11 @@ impl<
       })
     });
 
-    new_solutions_indicies.append(&mut last_front);
-    new_solutions_indicies.truncate(self.initial_population_size);
+    new_solutions_indices.append(&mut last_front);
+    new_solutions_indices.truncate(self.initial_population_size);
     // FIXME: avoid this allocation somehow
     let mut best_solutions_flags = vec![false; solutions.len()];
-    for idx in new_solutions_indicies.iter() {
+    for idx in new_solutions_indices.iter() {
       best_solutions_flags[*idx] = true;
     }
 
