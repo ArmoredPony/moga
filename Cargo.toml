@@ -11,9 +11,13 @@ rayon = "1.10.0"
 rand = "0.8.5"
 rand_distr = "0.4.3"
 
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+
 [profile.dev.package."*"]
-opt-level = 1
-debug = true
+opt-level = 3
 
 [[example]]
 name = "nsga2_binh_korn"

@@ -1,21 +1,21 @@
 /// Mutates solution.
 pub trait Mutator<S> {
   /// Takes a solution and mutates it.
-  fn mutate(&mut self, solution: &mut S);
+  fn mutate(&self, solution: &mut S);
 }
 
 /// `Mutator` that doesn't mutate given value.
 pub struct NoMutator();
 
 impl<S> Mutator<S> for NoMutator {
-  fn mutate(&mut self, _: &mut S) {}
+  fn mutate(&self, _: &mut S) {}
 }
 
 impl<S, F> Mutator<S> for F
 where
-  F: FnMut(&mut S),
+  F: Fn(&mut S),
 {
-  fn mutate(&mut self, solution: &mut S) {
+  fn mutate(&self, solution: &mut S) {
     self(solution)
   }
 }
