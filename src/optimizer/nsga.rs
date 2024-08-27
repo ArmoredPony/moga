@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, marker::PhantomData};
+use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 
 use crate::{
   objective::{pareto::ParetoDominance, Scores},
@@ -87,6 +87,13 @@ impl<
   }
 }
 
+type SolutionIndex = usize; // index of solution in `solutions` vector
+type DominanceCounter = u32; // number of solution's dominators
+type CrowdingDistance = f64; // crowding distance of a solution
+type FrontNumber = u32; // front number. the lower - the better
+type DominanceList = Vec<SolutionIndex>;
+type Front = Vec<SolutionIndex>;
+
 impl<
     S,
     const OBJECTIVE_CNT: usize,
@@ -131,13 +138,8 @@ impl<
     solutions: Vec<S>,
     scores: Vec<Scores<OBJECTIVE_CNT>>,
   ) -> (Vec<S>, Vec<Scores<OBJECTIVE_CNT>>) {
-    type SolutionIndex = usize; // index of solution in `solutions` vector
-    type DominanceCounter = u32; // number of solution's dominators
-    type CrowdingDistance = f64; // crowding distance of a solution
-    type FrontNumber = u32; // front number. the lower - the better
-
     // contains dominated solutions with their indices by each solution
-    let mut dominance_lists: Vec<Vec<SolutionIndex>>;
+    let mut dominance_lists: Vec<DominanceList>;
     // contains number of solutions dominating each solution
     let mut dominance_counters: Vec<DominanceCounter>;
     // contains from numbers of each solution
@@ -145,12 +147,10 @@ impl<
     // contains crowding distance on each solution
     let mut crowding_distances: Vec<CrowdingDistance>;
     // indices of solutions of the first front
-    let mut first_front: Vec<SolutionIndex>;
+    let mut first_front: Front;
 
     dominance_lists = vec![Vec::new(); solutions.len()];
     dominance_counters = vec![0; solutions.len()];
-    front_numbers = vec![FrontNumber::MAX; solutions.len()];
-    crowding_distances = vec![0.0; solutions.len()];
     first_front = Vec::new();
 
     // fill dominance sets and counters
@@ -184,17 +184,19 @@ impl<
         first_front.push(p_idx); // put its index into the first front
       }
     }
+
     debug_assert!(
       !first_front.is_empty(),
       "first front must have at least 1 solution"
     );
 
+    front_numbers = vec![FrontNumber::MAX; solutions.len()];
     let mut last_front = first_front;
     let mut new_solutions_indices: Vec<SolutionIndex> = Vec::new();
     let mut front_idx = 0;
-    // while last front isn't empty and we haven't found enough solutions...
-    while !last_front.is_empty()
-      && new_solutions_indices.len() + last_front.len() < solutions.len()
+    // until we select enough solutions...
+    while new_solutions_indices.len() + last_front.len()
+      < self.initial_population_size
     {
       let mut next_front = Vec::new();
       // for each solution `p` in last front...
@@ -210,66 +212,80 @@ impl<
           }
         }
       }
+      // save current last front indices
       new_solutions_indices.append(&mut last_front);
+      // and replace last front with next front
       last_front = next_front;
       front_idx += 1;
     }
 
     // calculate crowding distance for each solution in the last found front
-    // for each objective `o`...
-    for o_idx in 0..OBJECTIVE_CNT {
-      // sort solutions by their scores of objective `o`
-      last_front.sort_by(|&a_idx, &b_idx| {
-        scores[a_idx][o_idx]
-          .partial_cmp(&scores[b_idx][o_idx])
-          .expect("NaN encountered")
-      });
-      // get the first and the last front members
-      let first_idx = last_front[0];
-      let last_idx = last_front[last_front.len() - 1];
-      // set crowding distances of first and last front member to `f64::MAX`
-      crowding_distances[first_idx] = f64::MAX;
-      crowding_distances[last_idx] = f64::MAX;
-      // calculate difference between max and min score of current objective
-      let min_score = scores[first_idx][o_idx];
-      let max_score = scores[last_idx][o_idx];
-      let score_diff = if max_score != min_score {
-        f64::from(max_score - min_score)
-      } else {
-        1.0
-      };
-      // for each solution except the first and the last in the last front...
-      for solutions in last_front.windows(3) {
-        let (prev_idx, curr_idx, next_idx) =
-          (solutions[0], solutions[1], solutions[2]);
-        let prev_cd = crowding_distances[prev_idx];
-        let next_cd = crowding_distances[next_idx];
-        // cd[i] = cd[i] + (cd[i+1] - cd[i-1]) / (max - min)
-        crowding_distances[curr_idx] += (next_cd - prev_cd) / score_diff;
+    crowding_distances = vec![0.0; solutions.len()];
+    // if last front has more than 2 values...
+    if last_front.len() > 2 {
+      // for each objective `o`...
+      for o_idx in 0..OBJECTIVE_CNT {
+        // sort solutions by their scores of objective `o`
+        last_front.sort_by(|&a_idx, &b_idx| {
+          scores[a_idx][o_idx]
+            .partial_cmp(&scores[b_idx][o_idx])
+            .unwrap_or(Ordering::Greater) // sort NaNs away
+        });
+
+        // get the first and the last front members
+        let first_idx = last_front[0];
+        let last_idx = last_front[last_front.len() - 1];
+        // set crowding distances of first and last front member to `f64::MAX`
+        crowding_distances[first_idx] = f64::MAX;
+        crowding_distances[last_idx] = f64::MAX;
+        // calculate difference between max and min score of current objective
+        let min_score = scores[first_idx][o_idx];
+        let max_score = scores[last_idx][o_idx];
+        let score_diff = if max_score != min_score {
+          f64::from(max_score - min_score)
+        } else {
+          1.0
+        };
+        // for each solution except the first and the last in the last front...
+        for idx in 2..last_front.len() - 2 {
+          if crowding_distances[idx] != f64::MAX {
+            let prev_cd = crowding_distances[idx - 1];
+            let next_cd = crowding_distances[idx + 1];
+            crowding_distances[idx] += (next_cd - prev_cd).abs() / score_diff;
+          }
+        }
       }
+      // sort solutions in the last front by their crowding distances
+      last_front.sort_by(|&a_idx, &b_idx| {
+        crowding_distances[b_idx].total_cmp(&crowding_distances[a_idx])
+      });
     }
 
-    // sort solutions in the last front by their crowding distances
-    last_front.sort_by(|&a_idx, &b_idx| {
+    new_solutions_indices.append(&mut last_front);
+    new_solutions_indices.truncate(self.initial_population_size);
+    new_solutions_indices.sort_by(|&a_idx, &b_idx| {
       front_numbers[a_idx].cmp(&front_numbers[b_idx]).then({
         crowding_distances[b_idx].total_cmp(&crowding_distances[a_idx])
       })
     });
 
-    new_solutions_indices.append(&mut last_front);
-    new_solutions_indices.truncate(self.initial_population_size);
-    // FIXME: avoid this allocation somehow
-    let mut best_solutions_flags = vec![false; solutions.len()];
-    for idx in new_solutions_indices.iter() {
-      best_solutions_flags[*idx] = true;
-    }
+    debug_assert_eq!(
+      new_solutions_indices.len(),
+      HashSet::<usize>::from_iter(new_solutions_indices.iter().cloned()).len(),
+      "new_solutions_indices must have only unique indices"
+    );
 
-    let (new_sols, new_scs): (Vec<S>, Vec<Scores<OBJECTIVE_CNT>>) =
-      best_solutions_flags
-        .into_iter()
-        .zip(solutions.into_iter().zip(scores))
-        .filter_map(|(is_best, (sol, sc))| is_best.then_some((sol, sc)))
-        .unzip();
+    let mut some_solutions: Vec<_> = solutions.into_iter().map(Some).collect();
+    let mut some_scores: Vec<_> = scores.into_iter().map(Some).collect();
+    let (new_sols, new_scs): (Vec<S>, Vec<_>) = new_solutions_indices
+      .into_iter()
+      .map(|idx| {
+        (
+          some_solutions[idx].take().expect("must be something here"),
+          some_scores[idx].take().expect("must be something here"),
+        )
+      })
+      .unzip();
 
     debug_assert_eq!(
       new_sols.len(),
