@@ -1,11 +1,11 @@
 /// Creates new solutions from previously selected.
-/// This operator spawns `M` offsprings from `N` parents.
-pub trait Crossover<const N: usize, const M: usize, S> {
+/// This operator spawns `O` offsprings from `P` parents.
+pub trait Crossover<S, const P: usize, const O: usize> {
   /// Takes a slice of selected solutions and returns created offsprings.
   fn create(&self, solutions: &[&S]) -> Vec<S>;
 }
 
-impl<S, F> Crossover<1, 1, S> for F
+impl<S, F> Crossover<S, 1, 1> for F
 where
   F: Fn(&S) -> S,
 {
@@ -14,7 +14,7 @@ where
   }
 }
 
-impl<S, F> Crossover<2, 1, S> for F
+impl<S, F> Crossover<S, 2, 1> for F
 where
   F: Fn(&S, &S) -> S,
 {
@@ -32,7 +32,7 @@ where
 }
 
 // tuple-to-array conversion can be implemented with a macro
-impl<S, F> Crossover<2, 2, S> for F
+impl<S, F> Crossover<S, 2, 2> for F
 where
   F: Fn(&S, &S) -> (S, S),
 {
@@ -49,7 +49,7 @@ where
   }
 }
 
-impl<S, F> Crossover<{ usize::MAX }, { usize::MAX }, S> for F
+impl<S, F> Crossover<S, { usize::MAX }, { usize::MAX }> for F
 where
   F: Fn(&[&S]) -> Vec<S>,
 {
@@ -65,9 +65,9 @@ mod tests {
   type Solution = f64;
 
   const fn as_crossover<
-    const N: usize,
-    const M: usize,
-    C: Crossover<N, M, Solution>,
+    const P: usize,
+    const O: usize,
+    C: Crossover<Solution, P, O>,
   >(
     _: &C,
   ) {

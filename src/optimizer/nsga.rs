@@ -12,17 +12,17 @@ use crate::{
 
 pub struct Nsga2<
   S,
-  const OBJ_CNT: usize,
-  const CRS_IN: usize,
-  const CRS_OUT: usize,
-  Obj: Objectives<OBJ_CNT, S>,
-  Ter: Terminator<S, OBJ_CNT>,
-  Sel: Selector<S, OBJ_CNT>,
-  Crs: Crossover<CRS_IN, CRS_OUT, S>,
+  const OBJECTIVE_CNT: usize,
+  const PARENT_CNT: usize,
+  const OFFSPRING_CNT: usize,
+  Obj: Objectives<S, OBJECTIVE_CNT>,
+  Ter: Terminator<S, OBJECTIVE_CNT>,
+  Sel: Selector<S, OBJECTIVE_CNT>,
+  Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
   Mut: Mutator<S>,
 > {
   solutions: Vec<S>,
-  scores: Vec<Scores<OBJ_CNT>>,
+  scores: Vec<Scores<OBJECTIVE_CNT>>,
   initial_population_size: usize,
   objective: Obj,
   terminator: Ter,
@@ -34,16 +34,26 @@ pub struct Nsga2<
 
 impl<
     S,
-    const OBJ_CNT: usize,
-    const CRS_IN: usize,
-    const CRS_OUT: usize,
-    Obj: Objectives<OBJ_CNT, S>,
-    Ter: Terminator<S, OBJ_CNT>,
-    Sel: Selector<S, OBJ_CNT>,
-    Crs: Crossover<CRS_IN, CRS_OUT, S>,
+    const OBJECTIVE_CNT: usize,
+    const PARENT_CNT: usize,
+    const OFFSPRING_CNT: usize,
+    Obj: Objectives<S, OBJECTIVE_CNT>,
+    Ter: Terminator<S, OBJECTIVE_CNT>,
+    Sel: Selector<S, OBJECTIVE_CNT>,
+    Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
     Mut: Mutator<S>,
   > Optimizer<S>
-  for Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
+  for Nsga2<
+    S,
+    OBJECTIVE_CNT,
+    PARENT_CNT,
+    OFFSPRING_CNT,
+    Obj,
+    Ter,
+    Sel,
+    Crs,
+    Mut,
+  >
 {
   fn run(mut self) -> Vec<S> {
     self.scores = self
@@ -79,15 +89,16 @@ impl<
 
 impl<
     S,
-    const OBJ_CNT: usize,
-    const CRS_IN: usize,
-    const CRS_OUT: usize,
-    Obj: Objectives<OBJ_CNT, S>,
-    Ter: Terminator<S, OBJ_CNT>,
-    Sel: Selector<S, OBJ_CNT>,
-    Crs: Crossover<CRS_IN, CRS_OUT, S>,
+    const OBJECTIVE_CNT: usize,
+    const PARENT_CNT: usize,
+    const OFFSPRING_CNT: usize,
+    Obj: Objectives<S, OBJECTIVE_CNT>,
+    Ter: Terminator<S, OBJECTIVE_CNT>,
+    Sel: Selector<S, OBJECTIVE_CNT>,
+    Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
     Mut: Mutator<S>,
-  > Nsga2<S, OBJ_CNT, CRS_IN, CRS_OUT, Obj, Ter, Sel, Crs, Mut>
+  >
+  Nsga2<S, OBJECTIVE_CNT, PARENT_CNT, OFFSPRING_CNT, Obj, Ter, Sel, Crs, Mut>
 {
   pub fn new(
     initial_population: Vec<S>,
@@ -118,8 +129,8 @@ impl<
   fn select_best_solutions(
     &mut self,
     solutions: Vec<S>,
-    scores: Vec<Scores<OBJ_CNT>>,
-  ) -> (Vec<S>, Vec<Scores<OBJ_CNT>>) {
+    scores: Vec<Scores<OBJECTIVE_CNT>>,
+  ) -> (Vec<S>, Vec<Scores<OBJECTIVE_CNT>>) {
     type SolutionIndex = usize; // index of solution in `solutions` vector
     type DominanceCounter = u32; // number of solution's dominators
     type CrowdingDistance = f64; // crowding distance of a solution
@@ -206,7 +217,7 @@ impl<
 
     // calculate crowding distance for each solution in the last found front
     // for each objective `o`...
-    for o_idx in 0..OBJ_CNT {
+    for o_idx in 0..OBJECTIVE_CNT {
       // sort solutions by their scores of objective `o`
       last_front.sort_by(|&a_idx, &b_idx| {
         scores[a_idx][o_idx]
@@ -253,7 +264,7 @@ impl<
       best_solutions_flags[*idx] = true;
     }
 
-    let (new_sols, new_scs): (Vec<S>, Vec<Scores<OBJ_CNT>>) =
+    let (new_sols, new_scs): (Vec<S>, Vec<Scores<OBJECTIVE_CNT>>) =
       best_solutions_flags
         .into_iter()
         .zip(solutions.into_iter().zip(scores))

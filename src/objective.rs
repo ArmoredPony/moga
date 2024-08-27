@@ -4,14 +4,14 @@ pub(crate) mod pareto;
 /// some objective. The close to 0 - the better the score is.
 pub type Scores<const N: usize> = [f32; N];
 
-/// Represents solution's performance scores. `N` is a number of performance
-/// metrics. The goal value of each score is deemed to be 0.
-pub trait Objectives<const N: usize, S> {
+/// Represents solution's performance scores. `N` is a number of objectives.
+/// The target value of each objective is deemed to be 0.
+pub trait Objectives<S, const N: usize> {
   /// Returns solution's performance scores. The closer to 0 - the better.
   fn evaluate(&self, solution: &S) -> Scores<N>;
 }
 
-impl<const N: usize, S, F> Objectives<N, S> for [F; N]
+impl<const N: usize, S, F> Objectives<S, N> for [F; N]
 where
   F: Fn(&S) -> f32,
 {
@@ -20,7 +20,7 @@ where
   }
 }
 
-impl<const N: usize, S, F> Objectives<N, S> for F
+impl<const N: usize, S, F> Objectives<S, N> for F
 where
   F: Fn(&S) -> Scores<N>,
 {
@@ -35,7 +35,7 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_objective<const N: usize, O: Objectives<N, Solution>>(_: &O) {}
+  fn as_objective<const N: usize, O: Objectives<Solution, N>>(_: &O) {}
 
   #[test]
   fn test_objective_from_closure() {
