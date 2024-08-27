@@ -72,10 +72,14 @@ mod tests {
   }
 
   #[test]
-  fn test_selector_from_closure<'a>() {
-    let select_all = |solutions: &'a [Solution], _: &[Scores<3>]| {
-      solutions.iter().collect::<Vec<&'a Solution>>()
-    };
+  fn test_selector_from_closure() {
+    // will work once `#![feature(closure_lifetime_binder)]`
+    // is fucking stabilized already it's been two years since it's implemented
+
+    // let select_all = for<'a, 'b>
+    //  |solutions: &'a [Solution], _: &'b [Scores<3>]| -> Vec<&'a Solution> {
+    //    solutions.iter().collect::<Vec<&'a Solution>>()
+    //   };
     // as_selector(&select_all);
   }
 
