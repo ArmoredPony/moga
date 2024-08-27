@@ -88,11 +88,17 @@ impl<
   }
 }
 
-type SolutionIndex = usize; // index of solution in `solutions` vector
-type DominanceCounter = u32; // number of solution's dominators
-type CrowdingDistance = f64; // crowding distance of a solution
-type FrontNumber = u32; // front number. the lower - the better
+// index of solution in `solutions` vector
+type SolutionIndex = usize;
+// number of solution's dominators
+type DominanceCounter = u32;
+// crowding distance of a solution
+type CrowdingDistance = f64;
+// front number. the lower - the better
+type FrontNumber = u32;
+// dominated by each solution solutions' indices
 type DominanceList = Vec<SolutionIndex>;
+// indices of solutions of a front
 type Front = Vec<SolutionIndex>;
 
 impl<
@@ -138,20 +144,11 @@ impl<
     solutions: Vec<S>,
     scores: Vec<Scores<OBJECTIVE_CNT>>,
   ) -> (Vec<S>, Vec<Scores<OBJECTIVE_CNT>>) {
-    // contains dominated solutions with their indices by each solution
-    let mut dominance_lists: Vec<DominanceList>;
-    // contains number of solutions dominating each solution
-    let mut dominance_counters: Vec<DominanceCounter>;
-    // contains from numbers of each solution
-    let mut front_numbers: Vec<FrontNumber>;
-    // contains crowding distance on each solution
-    let mut crowding_distances: Vec<CrowdingDistance>;
-    // indices of solutions of the first front
-    let mut first_front: Front;
-
-    dominance_lists = vec![Vec::new(); solutions.len()];
-    dominance_counters = vec![0; solutions.len()];
-    first_front = Vec::new();
+    let mut dominance_lists: Vec<DominanceList> =
+      vec![Vec::new(); solutions.len()];
+    let mut dominance_counters: Vec<DominanceCounter> =
+      vec![0; solutions.len()];
+    let mut first_front: Front = Vec::new();
 
     // fill dominance sets and counters
     for p_idx in 0..solutions.len() {
@@ -190,7 +187,8 @@ impl<
       "first front must have at least 1 solution"
     );
 
-    front_numbers = vec![FrontNumber::MAX; solutions.len()];
+    let mut front_numbers: Vec<FrontNumber> =
+      vec![FrontNumber::MAX; solutions.len()];
     let mut last_front = first_front;
     let mut new_solutions_indices: Vec<SolutionIndex> = Vec::new();
     let mut front_idx = 0;
@@ -220,7 +218,8 @@ impl<
     }
 
     // calculate crowding distance for each solution in the last found front
-    crowding_distances = vec![0.0; solutions.len()];
+    let mut crowding_distances: Vec<CrowdingDistance> =
+      vec![0.0; solutions.len()];
     // if last front has more than 2 values...
     if last_front.len() > 2 {
       // for each objective `o`...
