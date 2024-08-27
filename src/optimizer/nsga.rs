@@ -56,6 +56,7 @@ impl<
   >
 {
   fn run(mut self) -> Vec<S> {
+    // probably generalize this algorithm in `Optimizer`
     self.scores = self
       .solutions
       .iter()
@@ -132,7 +133,6 @@ impl<
     }
   }
 
-  // TODO: really really really want to refactor this mess
   fn select_best_solutions(
     &mut self,
     solutions: Vec<S>,
