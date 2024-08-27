@@ -21,7 +21,7 @@ fn main() {
   let selector = RandomSelector(10, rand::thread_rng());
 
   // SBX crossover for two floating point values
-  let f32_crossover = |a: f32, b: f32| -> (f32, f32) {
+  let f32_sbx = |a: f32, b: f32| -> (f32, f32) {
     let n = 2.0;
     let r: f32 = rand::thread_rng().gen_range(0.0..1.0);
     let beta = if r <= 0.5 {
@@ -35,8 +35,8 @@ fn main() {
   };
   // ...which is used on both solutions' values
   let crossover = |(x1, y1): &S, (x2, y2): &S| -> (S, S) {
-    let (x3, x4) = f32_crossover(*x1, *x2);
-    let (y3, y4) = f32_crossover(*y1, *y2);
+    let (x3, x4) = f32_sbx(*x1, *x2);
+    let (y3, y4) = f32_sbx(*y1, *y2);
     ((x3, y3), (x4, y4))
   };
 
@@ -47,12 +47,14 @@ fn main() {
     population, objectives, terminator, selector, crossover, mutator,
   );
   let results = nsga.run();
-  print!("l=[");
-  let mut iter = results.into_iter();
-  let (x, y) = iter.next().unwrap();
-  print!("({x:2},{y:2})");
-  for (x, y) in iter {
-    print!(",({x:2},{y:2})");
+
+  // take 10 random results and print them
+  println!("   x   |   y   ");
+  for (x, y) in results
+    .into_iter()
+    .choose_multiple(&mut rand::thread_rng(), 10)
+  {
+    println!("{x:.4} | {y:.4}");
   }
-  print!("]");
+  println!("  ...  |  ...  ");
 }
