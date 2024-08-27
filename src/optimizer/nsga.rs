@@ -222,7 +222,7 @@ impl<
       // calculate difference between max and min score of current objective
       let min_score = scores[first_idx][o_idx];
       let max_score = scores[last_idx][o_idx];
-      let score_diff = if max_score - min_score != 0.0 {
+      let score_diff = if max_score != min_score {
         f64::from(max_score - min_score)
       } else {
         1.0
