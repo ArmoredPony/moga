@@ -1,13 +1,16 @@
 pub(crate) mod pareto;
 
-/// An alias for array of `N` float values. Each value represents a score for
-/// some objective. The close to 0 - the better the score is.
-pub type Scores<const N: usize> = [f32; N];
+// An alias for objective score. The target value of a score is 0.
+pub(crate) type Score = f32;
+
+/// An alias for array of `N` `Score` values.
+pub(crate) type Scores<const N: usize> = [Score; N];
 
 /// Represents solution's performance scores. `N` is a number of objectives.
-/// The target value of each objective is deemed to be 0.
+/// The target score of each objective is deemed to be 0.
 pub trait Objectives<S, const N: usize> {
-  /// Returns solution's performance scores. The closer to 0 - the better.
+  /// Returns solution's performance scores. The closer a score to 0 - the
+  /// better.
   fn evaluate(&self, solution: &S) -> Scores<N>;
 }
 
@@ -45,7 +48,7 @@ mod tests {
   }
 
   #[test]
-  fn test_objective_from_closures() {
+  fn test_objective_from_closure_array() {
     let o1 = |v: &Solution| v * 1.0;
     let o2 = |v: &Solution| v * 2.0;
     let o3 = |v: &Solution| v * 3.0;
