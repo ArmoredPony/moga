@@ -38,7 +38,7 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_evaluator<const N: usize, O: Evaluator<Solution, N>>(_: &O) {}
+  fn as_evaluator<const N: usize, E: Evaluator<Solution, N>>(_: &E) {}
 
   #[test]
   fn test_evaluator_from_closure() {
