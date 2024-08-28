@@ -15,7 +15,7 @@ pub struct Nsga2<
   const OBJECTIVE_CNT: usize,
   const PARENT_CNT: usize,
   const OFFSPRING_CNT: usize,
-  Obj: Evaluator<S, OBJECTIVE_CNT>,
+  Eva: Evaluator<S, OBJECTIVE_CNT>,
   Ter: Terminator<S, OBJECTIVE_CNT>,
   Sel: Selector<S, OBJECTIVE_CNT>,
   Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
@@ -24,7 +24,7 @@ pub struct Nsga2<
   solutions: Vec<S>,
   scores: Vec<Scores<OBJECTIVE_CNT>>,
   initial_population_size: usize,
-  objective: Obj,
+  evaluator: Eva,
   terminator: Ter,
   selector: Sel,
   crossover: Crs,
@@ -60,7 +60,7 @@ impl<
     self.scores = self
       .solutions
       .iter()
-      .map(|s| self.objective.evaluate(s))
+      .map(|s| self.evaluator.evaluate(s))
       .collect();
 
     while !self.terminator.terminate(&self.solutions, &self.scores) {
@@ -74,7 +74,7 @@ impl<
         .for_each(|s| self.mutator.mutate(s));
       let mut created_scores: Vec<_> = created_solutions
         .iter()
-        .map(|s| self.objective.evaluate(s))
+        .map(|s| self.evaluator.evaluate(s))
         .collect();
 
       solutions.append(&mut created_solutions);
@@ -106,17 +106,17 @@ impl<
     const OBJECTIVE_CNT: usize,
     const PARENT_CNT: usize,
     const OFFSPRING_CNT: usize,
-    Obj: Evaluator<S, OBJECTIVE_CNT>,
+    Eva: Evaluator<S, OBJECTIVE_CNT>,
     Ter: Terminator<S, OBJECTIVE_CNT>,
     Sel: Selector<S, OBJECTIVE_CNT>,
     Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
     Mut: Mutator<S>,
   >
-  Nsga2<S, OBJECTIVE_CNT, PARENT_CNT, OFFSPRING_CNT, Obj, Ter, Sel, Crs, Mut>
+  Nsga2<S, OBJECTIVE_CNT, PARENT_CNT, OFFSPRING_CNT, Eva, Ter, Sel, Crs, Mut>
 {
   pub fn new(
     initial_population: Vec<S>,
-    objective: Obj,
+    evaluator: Eva,
     terminator: Ter,
     selector: Sel,
     crossover: Crs,
@@ -130,7 +130,7 @@ impl<
       initial_population_size: initial_population.len(),
       solutions: initial_population,
       scores: Vec::new(),
-      objective,
+      evaluator,
       terminator,
       selector,
       crossover,

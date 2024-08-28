@@ -15,7 +15,7 @@ fn main() {
   let f1 = |&(a, b): &(f32, f32)| 4.0 * a.powf(2.0) + 4.0 * b.powf(2.0);
   // and another objective function f2(x, y) = (x - 5)^2 + (y - 5)^2
   let f2 = |&(a, b): &(f32, f32)| (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0);
-  let objectives = [f1, f2];
+  let evaluator = [f1, f2];
 
   // terminates after 100 generations
   let terminator = GenerationsTerminator(100);
@@ -51,7 +51,7 @@ fn main() {
   };
 
   let nsga = Nsga2::new(
-    population, objectives, terminator, selector, crossover, mutator,
+    population, evaluator, terminator, selector, crossover, mutator,
   );
   let solutions = nsga.run();
 

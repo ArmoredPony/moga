@@ -41,19 +41,19 @@ mod tests {
   fn as_evaluator<const N: usize, O: Evaluator<Solution, N>>(_: &O) {}
 
   #[test]
-  fn test_objective_from_closure() {
-    let o = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
-    as_evaluator(&o);
-    assert_eq!(o.evaluate(&1.0), [1.0, 2.0, 3.0]);
+  fn test_evaluator_from_closure() {
+    let e = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
+    as_evaluator(&e);
+    assert_eq!(e.evaluate(&1.0), [1.0, 2.0, 3.0]);
   }
 
   #[test]
-  fn test_objective_from_closure_array() {
-    let o1 = |v: &Solution| v * 1.0;
-    let o2 = |v: &Solution| v * 2.0;
-    let o3 = |v: &Solution| v * 3.0;
-    let os = [o1, o2, o3];
-    as_evaluator(&os);
-    assert_eq!(os.evaluate(&1.0), [1.0, 2.0, 3.0])
+  fn test_evaluator_from_closure_array() {
+    let e1 = |v: &Solution| v * 1.0;
+    let e2 = |v: &Solution| v * 2.0;
+    let e3 = |v: &Solution| v * 3.0;
+    let es = [e1, e2, e3];
+    as_evaluator(&es);
+    assert_eq!(es.evaluate(&1.0), [1.0, 2.0, 3.0])
   }
 }
