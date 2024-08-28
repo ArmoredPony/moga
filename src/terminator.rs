@@ -1,4 +1,4 @@
-use crate::objective::Scores;
+use crate::evaluator::Scores;
 
 /// Terminates algorithm's execution based on some condition.
 pub trait Terminator<S, const N: usize> {

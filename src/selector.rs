@@ -1,6 +1,6 @@
 use rand::prelude::*;
 
-use crate::objective::Scores;
+use crate::evaluator::Scores;
 
 /// Performs selection of suitable solutions.
 pub trait Selector<S, const N: usize> {

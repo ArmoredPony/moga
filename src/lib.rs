@@ -1,13 +1,13 @@
 pub mod crossover;
+pub mod evaluator;
 pub mod mutator;
-pub mod objective;
 pub mod optimizer;
 pub mod selector;
 pub mod terminator;
 
 pub use crossover::*;
+pub use evaluator::*;
 pub use mutator::*;
-pub use objective::*;
 pub use optimizer::*;
 pub use selector::*;
 pub use terminator::*;

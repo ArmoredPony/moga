@@ -6,15 +6,15 @@ pub(crate) type Score = f32;
 /// An alias for array of `N` `Score` values.
 pub(crate) type Scores<const N: usize> = [Score; N];
 
-/// Represents solution's performance scores. `N` is a number of objectives.
+/// Evaluates solution's performance scores. `N` is a number of objectives.
 /// The target score of each objective is deemed to be 0.
-pub trait Objectives<S, const N: usize> {
+pub trait Evaluator<S, const N: usize> {
   /// Returns solution's performance scores. The closer a score to 0 - the
   /// better.
   fn evaluate(&self, solution: &S) -> Scores<N>;
 }
 
-impl<const N: usize, S, F> Objectives<S, N> for [F; N]
+impl<const N: usize, S, F> Evaluator<S, N> for [F; N]
 where
   F: Fn(&S) -> f32,
 {
@@ -23,7 +23,7 @@ where
   }
 }
 
-impl<const N: usize, S, F> Objectives<S, N> for F
+impl<const N: usize, S, F> Evaluator<S, N> for F
 where
   F: Fn(&S) -> Scores<N>,
 {
@@ -38,12 +38,12 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_objective<const N: usize, O: Objectives<Solution, N>>(_: &O) {}
+  fn as_evaluator<const N: usize, O: Evaluator<Solution, N>>(_: &O) {}
 
   #[test]
   fn test_objective_from_closure() {
     let o = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
-    as_objective(&o);
+    as_evaluator(&o);
     assert_eq!(o.evaluate(&1.0), [1.0, 2.0, 3.0]);
   }
 
@@ -53,7 +53,7 @@ mod tests {
     let o2 = |v: &Solution| v * 2.0;
     let o3 = |v: &Solution| v * 3.0;
     let os = [o1, o2, o3];
-    as_objective(&os);
+    as_evaluator(&os);
     assert_eq!(os.evaluate(&1.0), [1.0, 2.0, 3.0])
   }
 }

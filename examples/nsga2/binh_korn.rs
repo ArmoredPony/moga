@@ -17,7 +17,7 @@ fn main() {
   let f2 = |&(a, b): &(f32, f32)| (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0);
   let objectives = [f1, f2];
 
-  // terminates after 1000 generations
+  // terminates after 100 generations
   let terminator = GenerationsTerminator(100);
 
   // selects 10 values randomly
