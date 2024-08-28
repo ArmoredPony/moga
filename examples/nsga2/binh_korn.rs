@@ -17,6 +17,14 @@ fn main() {
   let f2 = |&(a, b): &(f32, f32)| (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0);
   let evaluator = [f1, f2];
 
+  // you can also create a closure that returns array
+  /*
+  let evaluator = |&(a, b): &(f32, f32)| [
+    4.0 * a.powf(2.0) + 4.0 * b.powf(2.0),
+    (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0)
+  ];
+  */
+
   // terminates after 100 generations
   let terminator = GenerationsTerminator(100);
 
