@@ -1,5 +1,7 @@
 use std::cmp::Ordering;
 
+use super::Score;
+
 /// Describes pareto dominance for arrays of floats.
 pub(crate) trait ParetoDominance {
   /// Returns `Less` if `self` dominates `other`, `Greater` if `other`
@@ -8,7 +10,7 @@ pub(crate) trait ParetoDominance {
   fn dominance(&self, other: &Self) -> Ordering;
 }
 
-impl ParetoDominance for [f32] {
+impl ParetoDominance for [Score] {
   fn dominance(&self, other: &Self) -> Ordering {
     let mut ord = Ordering::Equal;
     for (a, b) in self.iter().zip(other) {
