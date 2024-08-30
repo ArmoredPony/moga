@@ -1,5 +1,6 @@
 pub mod crossover;
 pub mod evaluator;
+mod execution;
 pub mod mutator;
 pub mod optimizer;
 pub mod selector;
