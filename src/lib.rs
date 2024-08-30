@@ -3,6 +3,7 @@ pub mod evaluator;
 mod execution;
 pub mod mutator;
 pub mod optimizer;
+pub mod score;
 pub mod selector;
 pub mod terminator;
 

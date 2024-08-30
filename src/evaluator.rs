@@ -2,15 +2,7 @@ use std::marker::PhantomData;
 
 use rayon::prelude::*;
 
-use crate::execution::*;
-
-pub(crate) mod pareto;
-
-// An alias for objective score. The target value of a score is 0.
-pub type Score = f32;
-
-/// An alias for array of `N` `Score` values.
-pub type Scores<const N: usize> = [Score; N];
+use crate::{execution::*, score::Scores};
 
 /// Evaluates solution's fitness, calculating an array of scores.
 /// `evaluate` returns an array of `Scores`. If you want to test a solution
@@ -97,6 +89,7 @@ pub trait Evaluator<S, const N: usize> {
   fn evaluate(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }
 
+// TODO: add docs
 pub trait EvaluatorExecutor<ExecutionStrategy, S, const N: usize> {
   fn evaluate(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }

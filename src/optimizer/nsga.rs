@@ -1,7 +1,7 @@
 use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 
 use crate::{
-  evaluator::{pareto::ParetoDominance, Scores},
+  score::{ParetoDominance, Scores},
   Crossover,
   EvaluatorExecutor,
   Mutator,

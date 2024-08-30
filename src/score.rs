@@ -1,8 +1,12 @@
 use std::cmp::Ordering;
 
-use super::Score;
+// An alias for objective score. The target value of a score is 0.
+pub type Score = f32;
 
-/// Describes pareto dominance for arrays of floats.
+/// An alias for array of `N` `Score` values.
+pub type Scores<const N: usize> = [Score; N];
+
+/// Describes pareto dominance for arrays of `Score`s.
 pub(crate) trait ParetoDominance {
   /// Returns `Less` if `self` dominates `other`, `Greater` if `other`
   /// dominates `Self`, otherwise `Equal`. `self` dominates `other` if all

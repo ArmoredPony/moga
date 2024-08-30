@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use rayon::prelude::*;
 
-use crate::{evaluator::Scores, execution::*};
+use crate::{execution::*, score::Scores};
 
 /// TODO: add docs
 pub trait TerminationCondition<S, const N: usize> {
