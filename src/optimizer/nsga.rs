@@ -10,19 +10,6 @@ use crate::{
   terminator::TerminatorExecutor,
 };
 
-/// Index of solution in `solutions` vector.
-type SolutionIndex = usize;
-/// Number of solution's dominators.
-type DominanceCounter = u32;
-/// Crowding distance of a solution.
-type CrowdingDistance = f64;
-/// Front number. the lower - the better.
-type FrontNumber = u32;
-/// Dominated by each solution solutions' indices.
-type DominanceList = Vec<SolutionIndex>;
-/// Indices of solutions of a front.
-type Front = Vec<SolutionIndex>;
-
 pub struct Nsga2<
   Sol,
   Eva: EvaluatorExecutor<EvaExecStrat, Sol, OBJECTIVE_CNT>,
@@ -103,6 +90,19 @@ impl<
     }
   }
 }
+
+/// Index of solution in `solutions` vector.
+type SolutionIndex = usize;
+/// Number of solution's dominators.
+type DominanceCounter = u32;
+/// Crowding distance of a solution.
+type CrowdingDistance = f64;
+/// Front number. the lower - the better.
+type FrontNumber = u32;
+/// Dominated by each solution solutions' indices.
+type DominanceList = Vec<SolutionIndex>;
+/// Indices of solutions of a front.
+type Front = Vec<SolutionIndex>;
 
 impl<
     Sol,

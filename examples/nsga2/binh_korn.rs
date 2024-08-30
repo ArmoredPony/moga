@@ -69,7 +69,7 @@ fn main() {
   let nsga = Nsga2::new(
     population, evaluator, terminator, selector, crossover, mutator,
   );
-  let solutions = nsga.run();
+  let solutions = nsga.optimize();
 
   // write solutions to file in examples/nsga2/binh_korn.csv
   let _ =

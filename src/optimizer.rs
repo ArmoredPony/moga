@@ -8,7 +8,7 @@ use crate::score::Scores;
 pub trait Optimizer<Sol, const OBJECTIVE_CNT: usize>: Sized {
   /// Runs `Optimizer` until the termination condition is met, then returns
   /// last found solutions.
-  fn run(mut self) -> Vec<Sol> {
+  fn optimize(mut self) -> Vec<Sol> {
     let scores = self.evaluate(self.peek_solutions());
     self.set_scores(scores);
 
