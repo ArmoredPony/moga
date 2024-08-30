@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 use std::{io::Write, path::Path};
 
 use moga::*;
@@ -15,18 +17,18 @@ fn main() {
   let f1 = |&(a, b): &(f32, f32)| 4.0 * a.powf(2.0) + 4.0 * b.powf(2.0);
   // and another objective function f2(x, y) = (x - 5)^2 + (y - 5)^2
   let f2 = |&(a, b): &(f32, f32)| (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0);
-  let evaluator = [f1, f2];
+  // let evaluator = [f1, f2];
 
   // you can also create a closure that returns array
-  /*
-  let evaluator = |&(a, b): &(f32, f32)| [
-    4.0 * a.powf(2.0) + 4.0 * b.powf(2.0),
-    (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0)
-  ];
-  */
+  let evaluator = |&(a, b): &(f32, f32)| {
+    [
+      4.0 * a.powf(2.0) + 4.0 * b.powf(2.0),
+      (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0),
+    ]
+  };
 
   // terminates after 100 generations
-  let terminator = GenerationsTerminator(100);
+  let terminator = GenerationsTerminator(1000);
 
   // selects 10 values randomly
   let selector = RandomSelector(10, rand::thread_rng());

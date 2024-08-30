@@ -12,10 +12,11 @@ use crate::{
 
 pub struct Nsga2<
   S,
+  EvaExecStrar,
   const OBJECTIVE_CNT: usize,
   const PARENT_CNT: usize,
   const OFFSPRING_CNT: usize,
-  Eva: Evaluator<S, OBJECTIVE_CNT>,
+  Eva: Evaluator<EvaExecStrar, S, OBJECTIVE_CNT>,
   Ter: Terminator<S, OBJECTIVE_CNT>,
   Sel: Selector<S, OBJECTIVE_CNT>,
   Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
@@ -30,14 +31,16 @@ pub struct Nsga2<
   crossover: Crs,
   mutator: Mut,
   _solution: PhantomData<S>,
+  _eva_es: PhantomData<EvaExecStrar>,
 }
 
 impl<
     S,
+    EvaExecStrat,
     const OBJECTIVE_CNT: usize,
     const PARENT_CNT: usize,
     const OFFSPRING_CNT: usize,
-    Eva: Evaluator<S, OBJECTIVE_CNT>,
+    Eva: Evaluator<EvaExecStrat, S, OBJECTIVE_CNT>,
     Ter: Terminator<S, OBJECTIVE_CNT>,
     Sel: Selector<S, OBJECTIVE_CNT>,
     Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
@@ -45,6 +48,7 @@ impl<
   > Optimizer<S>
   for Nsga2<
     S,
+    EvaExecStrat,
     OBJECTIVE_CNT,
     PARENT_CNT,
     OFFSPRING_CNT,
@@ -57,11 +61,7 @@ impl<
 {
   fn run(mut self) -> Vec<S> {
     // probably generalize this algorithm in `Optimizer`
-    self.scores = self
-      .solutions
-      .iter()
-      .map(|s| self.evaluator.evaluate(s))
-      .collect();
+    self.scores = self.evaluator.evaluate(&self.solutions);
 
     while !self.terminator.terminate(&self.solutions, &self.scores) {
       let mut solutions = std::mem::take(&mut self.solutions);
@@ -72,10 +72,8 @@ impl<
       created_solutions
         .iter_mut()
         .for_each(|s| self.mutator.mutate(s));
-      let mut created_scores: Vec<_> = created_solutions
-        .iter()
-        .map(|s| self.evaluator.evaluate(s))
-        .collect();
+      let mut created_scores: Vec<_> =
+        self.evaluator.evaluate(&created_solutions);
 
       solutions.append(&mut created_solutions);
       scores.append(&mut created_scores);
@@ -103,16 +101,28 @@ type Front = Vec<SolutionIndex>;
 
 impl<
     S,
+    EvaExecStrat,
     const OBJECTIVE_CNT: usize,
     const PARENT_CNT: usize,
     const OFFSPRING_CNT: usize,
-    Eva: Evaluator<S, OBJECTIVE_CNT>,
+    Eva: Evaluator<EvaExecStrat, S, OBJECTIVE_CNT>,
     Ter: Terminator<S, OBJECTIVE_CNT>,
     Sel: Selector<S, OBJECTIVE_CNT>,
     Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
     Mut: Mutator<S>,
   >
-  Nsga2<S, OBJECTIVE_CNT, PARENT_CNT, OFFSPRING_CNT, Eva, Ter, Sel, Crs, Mut>
+  Nsga2<
+    S,
+    EvaExecStrat,
+    OBJECTIVE_CNT,
+    PARENT_CNT,
+    OFFSPRING_CNT,
+    Eva,
+    Ter,
+    Sel,
+    Crs,
+    Mut,
+  >
 {
   pub fn new(
     initial_population: Vec<S>,
@@ -136,6 +146,7 @@ impl<
       crossover,
       mutator,
       _solution: PhantomData,
+      _eva_es: PhantomData,
     }
   }
 
