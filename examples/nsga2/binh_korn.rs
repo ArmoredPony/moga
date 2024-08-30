@@ -2,7 +2,13 @@
 
 use std::{io::Write, path::Path};
 
-use moga::*;
+use moga::{
+  optimizer::Nsga2,
+  selector::RandomSelector,
+  terminator::GenerationsTerminator,
+  *,
+};
+use optimizer::Optimizer;
 use rand::prelude::*;
 use rand_distr::Normal;
 

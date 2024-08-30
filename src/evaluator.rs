@@ -13,7 +13,7 @@ use crate::{execution::*, score::Scores};
 ///
 /// # Examples
 ///
-/// <pre> add them later </pre>
+/// <pre> TODO: add them later </pre>
 pub trait Objective<S, const N: usize> {
   // TODO: add docs
   fn evaluate(&self, solution: &S) -> Scores<N>;

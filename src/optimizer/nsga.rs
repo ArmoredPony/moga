@@ -1,13 +1,13 @@
 use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 
+use super::Optimizer;
 use crate::{
+  crossover::Crossover,
+  evaluator::EvaluatorExecutor,
+  mutator::Mutator,
   score::{ParetoDominance, Scores},
-  Crossover,
-  EvaluatorExecutor,
-  Mutator,
-  Optimizer,
-  Selector,
-  TerminatorExecutor,
+  selector::Selector,
+  terminator::TerminatorExecutor,
 };
 
 pub struct Nsga2<
