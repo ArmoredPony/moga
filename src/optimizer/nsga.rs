@@ -3,24 +3,25 @@ use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 use crate::{
   evaluator::{pareto::ParetoDominance, Scores},
   Crossover,
-  Evaluator,
+  EvaluatorExecutor,
   Mutator,
   Optimizer,
   Selector,
-  Terminator,
+  TerminatorExecutor,
 };
 
 pub struct Nsga2<
   S,
-  EvaExecStrar,
-  const OBJECTIVE_CNT: usize,
-  const PARENT_CNT: usize,
-  const OFFSPRING_CNT: usize,
-  Eva: Evaluator<EvaExecStrar, S, OBJECTIVE_CNT>,
-  Ter: Terminator<S, OBJECTIVE_CNT>,
+  Eva: EvaluatorExecutor<EvaExecStrat, S, OBJECTIVE_CNT>,
+  Ter: TerminatorExecutor<TerExecStrat, S, OBJECTIVE_CNT>,
   Sel: Selector<S, OBJECTIVE_CNT>,
   Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
   Mut: Mutator<S>,
+  EvaExecStrat,
+  TerExecStrat,
+  const OBJECTIVE_CNT: usize,
+  const PARENT_CNT: usize,
+  const OFFSPRING_CNT: usize,
 > {
   solutions: Vec<S>,
   scores: Vec<Scores<OBJECTIVE_CNT>>,
@@ -31,32 +32,35 @@ pub struct Nsga2<
   crossover: Crs,
   mutator: Mut,
   _solution: PhantomData<S>,
-  _eva_es: PhantomData<EvaExecStrar>,
+  _eva_es: PhantomData<EvaExecStrat>,
+  _ter_es: PhantomData<TerExecStrat>,
 }
 
 impl<
     S,
-    EvaExecStrat,
-    const OBJECTIVE_CNT: usize,
-    const PARENT_CNT: usize,
-    const OFFSPRING_CNT: usize,
-    Eva: Evaluator<EvaExecStrat, S, OBJECTIVE_CNT>,
-    Ter: Terminator<S, OBJECTIVE_CNT>,
+    Eva: EvaluatorExecutor<EvaExecStrat, S, OBJECTIVE_CNT>,
+    Ter: TerminatorExecutor<TerExecStrat, S, OBJECTIVE_CNT>,
     Sel: Selector<S, OBJECTIVE_CNT>,
     Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
     Mut: Mutator<S>,
+    EvaExecStrat,
+    TerExecStrat,
+    const OBJECTIVE_CNT: usize,
+    const PARENT_CNT: usize,
+    const OFFSPRING_CNT: usize,
   > Optimizer<S>
   for Nsga2<
     S,
-    EvaExecStrat,
-    OBJECTIVE_CNT,
-    PARENT_CNT,
-    OFFSPRING_CNT,
     Eva,
     Ter,
     Sel,
     Crs,
     Mut,
+    EvaExecStrat,
+    TerExecStrat,
+    OBJECTIVE_CNT,
+    PARENT_CNT,
+    OFFSPRING_CNT,
   >
 {
   fn run(mut self) -> Vec<S> {
@@ -101,27 +105,29 @@ type Front = Vec<SolutionIndex>;
 
 impl<
     S,
-    EvaExecStrat,
-    const OBJECTIVE_CNT: usize,
-    const PARENT_CNT: usize,
-    const OFFSPRING_CNT: usize,
-    Eva: Evaluator<EvaExecStrat, S, OBJECTIVE_CNT>,
-    Ter: Terminator<S, OBJECTIVE_CNT>,
+    Eva: EvaluatorExecutor<EvaExecStrat, S, OBJECTIVE_CNT>,
+    Ter: TerminatorExecutor<TerExecStrat, S, OBJECTIVE_CNT>,
     Sel: Selector<S, OBJECTIVE_CNT>,
     Crs: Crossover<S, PARENT_CNT, OFFSPRING_CNT>,
     Mut: Mutator<S>,
+    EvaExecStrat,
+    TerExecStrat,
+    const OBJECTIVE_CNT: usize,
+    const PARENT_CNT: usize,
+    const OFFSPRING_CNT: usize,
   >
   Nsga2<
     S,
-    EvaExecStrat,
-    OBJECTIVE_CNT,
-    PARENT_CNT,
-    OFFSPRING_CNT,
     Eva,
     Ter,
     Sel,
     Crs,
     Mut,
+    EvaExecStrat,
+    TerExecStrat,
+    OBJECTIVE_CNT,
+    PARENT_CNT,
+    OFFSPRING_CNT,
   >
 {
   pub fn new(
@@ -147,6 +153,7 @@ impl<
       mutator,
       _solution: PhantomData,
       _eva_es: PhantomData,
+      _ter_es: PhantomData,
     }
   }
 
