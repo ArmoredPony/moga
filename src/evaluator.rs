@@ -108,7 +108,10 @@ where
   O: Objective<S, N>,
 {
   fn evaluate(&self, solutions: &[S]) -> Vec<Scores<N>> {
-    solutions.iter().map(|s| self.evaluate(s)).collect()
+    solutions
+      .iter()
+      .map(|s| Objective::evaluate(self, s))
+      .collect()
   }
 }
 
@@ -172,5 +175,16 @@ mod tests {
     as_evaluator(&e.par_batch());
   }
 
-  // TODO: test custom `Evaluator`
+  struct EvaluateToZero {}
+  impl<S> Evaluator<S, 1> for EvaluateToZero {
+    fn evaluate(&self, solutions: &[S]) -> Vec<Scores<1>> {
+      solutions.iter().map(|_| [0.0]).collect()
+    }
+  }
+
+  #[test]
+  fn test_custom_evaluator() {
+    let e = EvaluateToZero {};
+    as_evaluator(&e);
+  }
 }

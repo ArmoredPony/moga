@@ -166,4 +166,17 @@ mod tests {
     as_terminator(&mut t.par_each());
     as_terminator(&mut t.par_batch());
   }
+
+  struct TerminateInstantly {}
+  impl<S> Terminator<S, 3> for TerminateInstantly {
+    fn terminate(&mut self, _: &[S], _: &[Scores<3>]) -> bool {
+      true
+    }
+  }
+
+  #[test]
+  fn test_custom_terminator() {
+    let mut t = TerminateInstantly {};
+    as_terminator(&mut t);
+  }
 }
