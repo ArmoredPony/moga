@@ -10,5 +10,5 @@ pub enum ParallelEachExecution {}
 /// available thread.
 pub enum ParallelBatchExecution {}
 
-// TODO: add docs
+/// Custom execution strategy marker.
 pub enum CustomExecution {}

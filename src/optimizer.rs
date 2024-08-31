@@ -9,7 +9,7 @@ pub trait Optimizer<Sol, const OBJECTIVE_CNT: usize>: Sized {
   /// Runs `Optimizer` until the termination condition is met, then returns
   /// last found solutions.
   fn optimize(mut self) -> Vec<Sol> {
-    let scores = self.evaluate(self.peek_solutions());
+    let scores = self.test(self.peek_solutions());
     self.set_scores(scores);
 
     while !self.terminate() {
@@ -19,7 +19,7 @@ pub trait Optimizer<Sol, const OBJECTIVE_CNT: usize>: Sized {
       let selected_solutions = self.select(&solutions, &scores);
       let mut created_solutions = self.create(&selected_solutions);
       created_solutions.iter_mut().for_each(|s| self.mutate(s));
-      let mut created_scores: Vec<_> = self.evaluate(&created_solutions);
+      let mut created_scores: Vec<_> = self.test(&created_solutions);
 
       solutions.append(&mut created_solutions);
       scores.append(&mut created_scores);
@@ -46,7 +46,7 @@ pub trait Optimizer<Sol, const OBJECTIVE_CNT: usize>: Sized {
 
   fn set_scores(&mut self, scores: Vec<Scores<OBJECTIVE_CNT>>);
 
-  fn evaluate(&self, solutions: &[Sol]) -> Vec<Scores<OBJECTIVE_CNT>>;
+  fn test(&self, solutions: &[Sol]) -> Vec<Scores<OBJECTIVE_CNT>>;
 
   fn select<'a>(
     &mut self,

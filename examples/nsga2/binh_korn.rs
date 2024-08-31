@@ -2,7 +2,6 @@
 
 use std::{io::Write, path::Path};
 
-use evaluator::Objective;
 use moga::{
   optimizer::Nsga2,
   selector::RandomSelector,
@@ -12,6 +11,7 @@ use moga::{
 use optimizer::Optimizer;
 use rand::prelude::*;
 use rand_distr::Normal;
+use tester::Test;
 
 fn main() {
   // our 'solution' type represented by a pair of floating point valeus

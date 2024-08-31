@@ -3,21 +3,21 @@ use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 use super::Optimizer;
 use crate::{
   crossover::Crossover,
-  evaluator::EvaluatorExecutor,
   mutator::Mutator,
   score::{ParetoDominance, Scores},
   selector::Selector,
   terminator::TerminatorExecutor,
+  tester::TestExecutor,
 };
 
 pub struct Nsga2<
   Sol,
-  Eva: EvaluatorExecutor<EvaExecStrat, Sol, OBJECTIVE_CNT>,
+  Tst: TestExecutor<Sol, OBJECTIVE_CNT, TstExecStrat>,
   Ter: TerminatorExecutor<TerExecStrat, Sol, OBJECTIVE_CNT>,
   Sel: Selector<Sol, OBJECTIVE_CNT>,
   Crs: Crossover<Sol, PARENT_CNT, OFFSPRING_CNT>,
   Mut: Mutator<Sol>,
-  EvaExecStrat,
+  TstExecStrat,
   TerExecStrat,
   const OBJECTIVE_CNT: usize,
   const PARENT_CNT: usize,
@@ -26,24 +26,24 @@ pub struct Nsga2<
   solutions: Vec<Sol>,
   scores: Vec<Scores<OBJECTIVE_CNT>>,
   initial_population_size: usize,
-  evaluator: Eva,
+  tester: Tst,
   terminator: Ter,
   selector: Sel,
   crossover: Crs,
   mutator: Mut,
   _solution: PhantomData<Sol>,
-  _eva_es: PhantomData<EvaExecStrat>,
+  _eva_es: PhantomData<TstExecStrat>,
   _ter_es: PhantomData<TerExecStrat>,
 }
 
 impl<
     Sol,
-    Eva: EvaluatorExecutor<EvaExecStrat, Sol, OBJECTIVE_CNT>,
+    Tst: TestExecutor<Sol, OBJECTIVE_CNT, TstExecStrat>,
     Ter: TerminatorExecutor<TerExecStrat, Sol, OBJECTIVE_CNT>,
     Sel: Selector<Sol, OBJECTIVE_CNT>,
     Crs: Crossover<Sol, PARENT_CNT, OFFSPRING_CNT>,
     Mut: Mutator<Sol>,
-    EvaExecStrat,
+    TstExecStrat,
     TerExecStrat,
     const OBJECTIVE_CNT: usize,
     const PARENT_CNT: usize,
@@ -51,12 +51,12 @@ impl<
   >
   Nsga2<
     Sol,
-    Eva,
+    Tst,
     Ter,
     Sel,
     Crs,
     Mut,
-    EvaExecStrat,
+    TstExecStrat,
     TerExecStrat,
     OBJECTIVE_CNT,
     PARENT_CNT,
@@ -65,7 +65,7 @@ impl<
 {
   pub fn new(
     initial_population: Vec<Sol>,
-    evaluator: Eva,
+    tester: Tst,
     terminator: Ter,
     selector: Sel,
     crossover: Crs,
@@ -79,7 +79,7 @@ impl<
       initial_population_size: initial_population.len(),
       solutions: initial_population,
       scores: Vec::new(),
-      evaluator,
+      tester,
       terminator,
       selector,
       crossover,
@@ -106,12 +106,12 @@ type Front = Vec<SolutionIndex>;
 
 impl<
     Sol,
-    Eva: EvaluatorExecutor<EvaExecStrat, Sol, OBJECTIVE_CNT>,
+    Tst: TestExecutor<Sol, OBJECTIVE_CNT, TstExecStrat>,
     Ter: TerminatorExecutor<TerExecStrat, Sol, OBJECTIVE_CNT>,
     Sel: Selector<Sol, OBJECTIVE_CNT>,
     Crs: Crossover<Sol, PARENT_CNT, OFFSPRING_CNT>,
     Mut: Mutator<Sol>,
-    EvaExecStrat,
+    TstExecStrat,
     TerExecStrat,
     const OBJECTIVE_CNT: usize,
     const PARENT_CNT: usize,
@@ -119,12 +119,12 @@ impl<
   > Optimizer<Sol, OBJECTIVE_CNT>
   for Nsga2<
     Sol,
-    Eva,
+    Tst,
     Ter,
     Sel,
     Crs,
     Mut,
-    EvaExecStrat,
+    TstExecStrat,
     TerExecStrat,
     OBJECTIVE_CNT,
     PARENT_CNT,
@@ -155,8 +155,8 @@ impl<
     self.scores = scores;
   }
 
-  fn evaluate(&self, solutions: &[Sol]) -> Vec<Scores<OBJECTIVE_CNT>> {
-    self.evaluator.evaluate(solutions)
+  fn test(&self, solutions: &[Sol]) -> Vec<Scores<OBJECTIVE_CNT>> {
+    self.tester.execute_tests(solutions)
   }
 
   fn select<'a>(
