@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use rayon::prelude::*;
 
 use crate::{execution::*, score::Scores};
@@ -7,6 +5,7 @@ use crate::{execution::*, score::Scores};
 /// Evaluates solution's fitness, calculating an array of scores.
 /// `test` call returns an array of `Scores`. If you want to test a solution
 /// against only one metric, wrap it in a single element array nonetheless.
+/// The target score of each objective in test is deemed to be 0.
 ///
 /// This trait is implemented for closure of type `Fn(&S) -> [f32; N]`,
 /// allowing for a simple and concise closure-to-test conversion.
@@ -15,40 +14,9 @@ use crate::{execution::*, score::Scores};
 ///
 /// <pre> TODO: add them later </pre>
 pub trait Test<S, const N: usize> {
-  // TODO: add docs
+  /// Returns performance scores for given solution.
+  /// The closer a score is to 0 - the better.
   fn test(&self, solution: &S) -> Scores<N>;
-
-  /// Creates a wrapper around `Test` that marks the given test to
-  /// be executed in parallel for **each** solution.
-  ///
-  /// **Parallelization is implemented with [rayon]. As a result, for simple
-  /// tests, parallelization may only decrease performance because of additional
-  /// overhead introduced. Benchmark if in doubt.**
-  fn par_each(self) -> ParEachTest<S, N, Self>
-  where
-    Self: Sized,
-  {
-    ParEachTest {
-      test: self,
-      _solution: PhantomData,
-    }
-  }
-
-  /// Creates a wrapper around `Test` that marks the given test to
-  /// be executed in parallel for each **batch** of solutions.
-  ///
-  /// **Parallelization is implemented with [rayon]. As a result, for simple
-  /// tests, parallelization may only decrease performance because of additional
-  /// overhead introduced. Benchmark if in doubt.**
-  fn par_batch(self) -> ParBatchTest<S, N, Self>
-  where
-    Self: Sized,
-  {
-    ParBatchTest {
-      test: self,
-      _solution: PhantomData,
-    }
-  }
 }
 
 impl<S, const N: usize, F> Test<S, N> for [F; N]
@@ -69,29 +37,14 @@ where
   }
 }
 
-// TODO: add docs
-pub struct ParEachTest<S, const N: usize, T: Test<S, N>> {
-  test: T,
-  _solution: PhantomData<S>,
-}
-
-// TODO: add docs
-pub struct ParBatchTest<S, const N: usize, T: Test<S, N>> {
-  test: T,
-  _solution: PhantomData<S>,
-}
+impl<S, const N: usize, T> IntoPar<S, N> for T where T: Test<S, N> {}
 
 /// Tests performance of each solution, calculating their scores.
 /// The target score of each objective in test is deemed to be 0.
 pub trait Tester<S, const N: usize> {
   /// Returns a vector of performance scores for each solution.
-  /// The closer a score to 0 - the better.
+  /// The closer a score is to 0 - the better.
   fn test(&self, solutions: &[S]) -> Vec<Scores<N>>;
-}
-
-// TODO: add docs
-pub trait TestExecutor<S, const N: usize, ExecutionStrategy> {
-  fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }
 
 impl<S, const N: usize, F> Tester<S, N> for F
@@ -103,6 +56,12 @@ where
   }
 }
 
+// TODO: add docs
+// TODO: make private
+pub trait TestExecutor<S, const N: usize, ExecutionStrategy> {
+  fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>>;
+}
+
 impl<S, const N: usize, E> TestExecutor<S, N, CustomExecution> for E
 where
   E: Tester<S, N>,
@@ -112,37 +71,37 @@ where
   }
 }
 
-impl<const N: usize, S, O> TestExecutor<S, N, SequentialExecution> for O
+impl<const N: usize, S, T> TestExecutor<S, N, SequentialExecution> for T
 where
-  O: Test<S, N>,
+  T: Test<S, N>,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
     solutions.iter().map(|s| Test::test(self, s)).collect()
   }
 }
 
-impl<const N: usize, S, O> TestExecutor<S, N, ParallelEachExecution>
-  for ParEachTest<S, N, O>
+impl<const N: usize, S, T> TestExecutor<S, N, ParallelEachExecution>
+  for ParEach<S, T>
 where
   S: Sync,
-  O: Test<S, N> + Sync,
+  T: Test<S, N> + Sync,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
-    solutions.par_iter().map(|s| self.test.test(s)).collect()
+    solutions.par_iter().map(|s| self.test(s)).collect()
   }
 }
 
-impl<const N: usize, S, O> TestExecutor<S, N, ParallelBatchExecution>
-  for ParBatchTest<S, N, O>
+impl<const N: usize, S, T> TestExecutor<S, N, ParallelBatchExecution>
+  for ParBatch<S, T>
 where
   S: Sync,
-  O: Test<S, N> + Sync,
+  T: Test<S, N> + Sync,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
     let chunk_size = (solutions.len() / rayon::current_num_threads()).max(1);
     solutions
       .par_chunks(chunk_size)
-      .flat_map_iter(|chunk| chunk.iter().map(|s| self.test.test(s)))
+      .flat_map_iter(|chunk| chunk.iter().map(|s| self.test(s)))
       .collect()
   }
 }
