@@ -3,15 +3,11 @@
 use std::{io::Write, path::Path};
 
 use moga::{
-  optimizer::Nsga2,
+  optimizer::{Nsga2, Optimizer},
   selector::RandomSelector,
-  terminator::GenerationsTerminator,
-  *,
 };
-use optimizer::Optimizer;
-use rand::prelude::*;
-use rand_distr::Normal;
-use tester::Test;
+use rand::{seq::IteratorRandom, Rng};
+use rand_distr::{Distribution, Normal};
 
 fn main() {
   // our 'solution' type represented by a pair of floating point valeus
@@ -35,8 +31,8 @@ fn main() {
   };
 
   // terminates after 100 generations
-  let terminator = GenerationsTerminator(1000);
-  // let terminator = |
+  // let terminator = GenerationsTerminator(1000);
+  let terminator = |sol: &S, sc: &[f32; 2]| *sol == (5.0, 5.0);
 
   // selects 10 values randomly
   let selector = RandomSelector(10, rand::thread_rng());

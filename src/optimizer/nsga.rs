@@ -11,60 +11,60 @@ use crate::{
 };
 
 pub struct Nsga2<
-  Sol,
-  Tst: TestExecutor<Sol, OBJECTIVE_CNT, TstExecStrat>,
-  Ter: TerminatorExecutor<TerExecStrat, Sol, OBJECTIVE_CNT>,
-  Sel: Selector<Sol, OBJECTIVE_CNT>,
-  Crs: Crossover<Sol, PARENT_CNT, OFFSPRING_CNT>,
-  Mut: Mutator<Sol>,
+  Solution,
+  Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
+  Sel: Selector<Solution, OBJECTIVE_NUM>,
+  Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
+  Mut: Mutator<Solution>,
+  Ter: TerminatorExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
   TstExecStrat,
   TerExecStrat,
-  const OBJECTIVE_CNT: usize,
-  const PARENT_CNT: usize,
-  const OFFSPRING_CNT: usize,
+  const OBJECTIVE_NUM: usize,
+  const PARENT_NUM: usize,
+  const OFFSPRING_NUM: usize,
 > {
-  solutions: Vec<Sol>,
-  scores: Vec<Scores<OBJECTIVE_CNT>>,
+  solutions: Vec<Solution>,
+  scores: Vec<Scores<OBJECTIVE_NUM>>,
   initial_population_size: usize,
   tester: Tst,
-  terminator: Ter,
   selector: Sel,
   crossover: Crs,
   mutator: Mut,
-  _solution: PhantomData<Sol>,
+  terminator: Ter,
+  _solution: PhantomData<Solution>,
   _eva_es: PhantomData<TstExecStrat>,
   _ter_es: PhantomData<TerExecStrat>,
 }
 
 impl<
-    Sol,
-    Tst: TestExecutor<Sol, OBJECTIVE_CNT, TstExecStrat>,
-    Ter: TerminatorExecutor<TerExecStrat, Sol, OBJECTIVE_CNT>,
-    Sel: Selector<Sol, OBJECTIVE_CNT>,
-    Crs: Crossover<Sol, PARENT_CNT, OFFSPRING_CNT>,
-    Mut: Mutator<Sol>,
+    Solution,
+    Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
+    Sel: Selector<Solution, OBJECTIVE_NUM>,
+    Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
+    Mut: Mutator<Solution>,
+    Ter: TerminatorExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
     TstExecStrat,
     TerExecStrat,
-    const OBJECTIVE_CNT: usize,
-    const PARENT_CNT: usize,
-    const OFFSPRING_CNT: usize,
+    const OBJECTIVE_NUM: usize,
+    const PARENT_NUM: usize,
+    const OFFSPRING_NUM: usize,
   >
   Nsga2<
-    Sol,
+    Solution,
     Tst,
-    Ter,
     Sel,
     Crs,
     Mut,
+    Ter,
     TstExecStrat,
     TerExecStrat,
-    OBJECTIVE_CNT,
-    PARENT_CNT,
-    OFFSPRING_CNT,
+    OBJECTIVE_NUM,
+    PARENT_NUM,
+    OFFSPRING_NUM,
   >
 {
   pub fn new(
-    initial_population: Vec<Sol>,
+    initial_population: Vec<Solution>,
     tester: Tst,
     terminator: Ter,
     selector: Sel,
@@ -105,73 +105,73 @@ type DominanceList = Vec<SolutionIndex>;
 type Front = Vec<SolutionIndex>;
 
 impl<
-    Sol,
-    Tst: TestExecutor<Sol, OBJECTIVE_CNT, TstExecStrat>,
-    Ter: TerminatorExecutor<TerExecStrat, Sol, OBJECTIVE_CNT>,
-    Sel: Selector<Sol, OBJECTIVE_CNT>,
-    Crs: Crossover<Sol, PARENT_CNT, OFFSPRING_CNT>,
-    Mut: Mutator<Sol>,
+    Solution,
+    Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
+    Sel: Selector<Solution, OBJECTIVE_NUM>,
+    Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
+    Mut: Mutator<Solution>,
+    Ter: TerminatorExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
     TstExecStrat,
     TerExecStrat,
-    const OBJECTIVE_CNT: usize,
-    const PARENT_CNT: usize,
-    const OFFSPRING_CNT: usize,
-  > Optimizer<Sol, OBJECTIVE_CNT>
+    const OBJECTIVE_NUM: usize,
+    const PARENT_NUM: usize,
+    const OFFSPRING_NUM: usize,
+  > Optimizer<Solution, OBJECTIVE_NUM>
   for Nsga2<
-    Sol,
+    Solution,
     Tst,
-    Ter,
     Sel,
     Crs,
     Mut,
+    Ter,
     TstExecStrat,
     TerExecStrat,
-    OBJECTIVE_CNT,
-    PARENT_CNT,
-    OFFSPRING_CNT,
+    OBJECTIVE_NUM,
+    PARENT_NUM,
+    OFFSPRING_NUM,
   >
 {
-  fn peek_solutions(&self) -> &[Sol] {
+  fn peek_solutions(&self) -> &[Solution] {
     &self.solutions
   }
 
-  fn peek_scores(&self) -> &[Scores<OBJECTIVE_CNT>] {
+  fn peek_scores(&self) -> &[Scores<OBJECTIVE_NUM>] {
     &self.scores
   }
 
-  fn take_solutions(&mut self) -> Vec<Sol> {
+  fn take_solutions(&mut self) -> Vec<Solution> {
     std::mem::take(&mut self.solutions)
   }
 
-  fn take_scores(&mut self) -> Vec<Scores<OBJECTIVE_CNT>> {
+  fn take_scores(&mut self) -> Vec<Scores<OBJECTIVE_NUM>> {
     std::mem::take(&mut self.scores)
   }
 
-  fn set_solutions(&mut self, solutions: Vec<Sol>) {
+  fn set_solutions(&mut self, solutions: Vec<Solution>) {
     self.solutions = solutions;
   }
 
-  fn set_scores(&mut self, scores: Vec<Scores<OBJECTIVE_CNT>>) {
+  fn set_scores(&mut self, scores: Vec<Scores<OBJECTIVE_NUM>>) {
     self.scores = scores;
   }
 
-  fn test(&self, solutions: &[Sol]) -> Vec<Scores<OBJECTIVE_CNT>> {
+  fn test(&self, solutions: &[Solution]) -> Vec<Scores<OBJECTIVE_NUM>> {
     self.tester.execute_tests(solutions)
   }
 
   fn select<'a>(
     &mut self,
-    solutions: &'a [Sol],
-    scores: &[Scores<OBJECTIVE_CNT>],
-  ) -> Vec<&'a Sol> {
+    solutions: &'a [Solution],
+    scores: &[Scores<OBJECTIVE_NUM>],
+  ) -> Vec<&'a Solution> {
     self.selector.select(solutions, scores)
   }
 
-  fn create(&self, solutions: &[&Sol]) -> Vec<Sol> {
+  fn create(&self, solutions: &[&Solution]) -> Vec<Solution> {
     self.crossover.create(solutions)
   }
 
-  fn mutate(&self, solution: &mut Sol) {
+  fn mutate(&self, solution: &mut Solution) {
     self.mutator.mutate(solution)
   }
 
@@ -181,9 +181,9 @@ impl<
 
   fn truncate(
     &self,
-    solutions: Vec<Sol>,
-    scores: Vec<Scores<OBJECTIVE_CNT>>,
-  ) -> (Vec<Sol>, Vec<Scores<OBJECTIVE_CNT>>) {
+    solutions: Vec<Solution>,
+    scores: Vec<Scores<OBJECTIVE_NUM>>,
+  ) -> (Vec<Solution>, Vec<Scores<OBJECTIVE_NUM>>) {
     let mut dominance_lists: Vec<DominanceList> =
       vec![Vec::new(); solutions.len()];
     let mut dominance_counters: Vec<DominanceCounter> =
@@ -263,7 +263,7 @@ impl<
     // if last front has more than 2 values...
     if last_front.len() > 2 {
       // for each objective `o`...
-      for o_idx in 0..OBJECTIVE_CNT {
+      for o_idx in 0..OBJECTIVE_NUM {
         // sort solutions by their scores of objective `o`
         last_front.sort_by(|&a_idx, &b_idx| {
           scores[a_idx][o_idx]
@@ -316,7 +316,7 @@ impl<
 
     let mut some_solutions: Vec<_> = solutions.into_iter().map(Some).collect();
     let mut some_scores: Vec<_> = scores.into_iter().map(Some).collect();
-    let (new_sols, new_scs): (Vec<Sol>, Vec<_>) = new_solutions_indices
+    let (new_sols, new_scs): (Vec<Solution>, Vec<_>) = new_solutions_indices
       .into_iter()
       .map(|idx| {
         (

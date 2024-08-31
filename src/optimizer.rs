@@ -5,10 +5,10 @@ pub use nsga::*;
 use crate::score::Scores;
 
 /// Represents an abstract optimizer.
-pub trait Optimizer<Sol, const OBJECTIVE_CNT: usize>: Sized {
+pub trait Optimizer<Solution, const OBJECTIVE_NUM: usize>: Sized {
   /// Runs `Optimizer` until the termination condition is met, then returns
   /// last found solutions.
-  fn optimize(mut self) -> Vec<Sol> {
+  fn optimize(mut self) -> Vec<Solution> {
     let scores = self.test(self.peek_solutions());
     self.set_scores(scores);
 
@@ -34,35 +34,35 @@ pub trait Optimizer<Sol, const OBJECTIVE_CNT: usize>: Sized {
 
   // TODO: add docs
 
-  fn peek_solutions(&self) -> &[Sol];
+  fn peek_solutions(&self) -> &[Solution];
 
-  fn peek_scores(&self) -> &[Scores<OBJECTIVE_CNT>];
+  fn peek_scores(&self) -> &[Scores<OBJECTIVE_NUM>];
 
-  fn take_solutions(&mut self) -> Vec<Sol>;
+  fn take_solutions(&mut self) -> Vec<Solution>;
 
-  fn take_scores(&mut self) -> Vec<Scores<OBJECTIVE_CNT>>;
+  fn take_scores(&mut self) -> Vec<Scores<OBJECTIVE_NUM>>;
 
-  fn set_solutions(&mut self, solutions: Vec<Sol>);
+  fn set_solutions(&mut self, solutions: Vec<Solution>);
 
-  fn set_scores(&mut self, scores: Vec<Scores<OBJECTIVE_CNT>>);
+  fn set_scores(&mut self, scores: Vec<Scores<OBJECTIVE_NUM>>);
 
-  fn test(&self, solutions: &[Sol]) -> Vec<Scores<OBJECTIVE_CNT>>;
+  fn test(&self, solutions: &[Solution]) -> Vec<Scores<OBJECTIVE_NUM>>;
 
   fn select<'a>(
     &mut self,
-    solutions: &'a [Sol],
-    scores: &[Scores<OBJECTIVE_CNT>],
-  ) -> Vec<&'a Sol>;
+    solutions: &'a [Solution],
+    scores: &[Scores<OBJECTIVE_NUM>],
+  ) -> Vec<&'a Solution>;
 
-  fn create(&self, solutions: &[&Sol]) -> Vec<Sol>;
+  fn create(&self, solutions: &[&Solution]) -> Vec<Solution>;
 
-  fn mutate(&self, solution: &mut Sol);
+  fn mutate(&self, solution: &mut Solution);
 
   fn truncate(
     &self,
-    solutions: Vec<Sol>,
-    scores: Vec<Scores<OBJECTIVE_CNT>>,
-  ) -> (Vec<Sol>, Vec<Scores<OBJECTIVE_CNT>>);
+    solutions: Vec<Solution>,
+    scores: Vec<Scores<OBJECTIVE_NUM>>,
+  ) -> (Vec<Solution>, Vec<Scores<OBJECTIVE_NUM>>);
 
   fn terminate(&mut self) -> bool;
 }
