@@ -18,7 +18,7 @@ pub trait Optimizer<Solution, const OBJECTIVE_NUM: usize>: Sized {
 
       let selected_solutions = self.select(&solutions, &scores);
       let mut created_solutions = self.create(&selected_solutions);
-      created_solutions.iter_mut().for_each(|s| self.mutate(s));
+      self.mutate(&mut created_solutions);
       let mut created_scores: Vec<_> = self.test(&created_solutions);
 
       solutions.append(&mut created_solutions);
@@ -56,7 +56,7 @@ pub trait Optimizer<Solution, const OBJECTIVE_NUM: usize>: Sized {
 
   fn create(&self, solutions: &[&Solution]) -> Vec<Solution>;
 
-  fn mutate(&self, solution: &mut Solution);
+  fn mutate(&self, solution: &mut [Solution]);
 
   fn truncate(
     &self,

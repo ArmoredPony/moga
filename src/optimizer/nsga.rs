@@ -2,10 +2,10 @@ use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 
 use super::Optimizer;
 use crate::{
-  crossover::Crossover,
-  mutator::MutationOperator,
+  crossover::RecombinationOperator,
+  mutator::MutationExecutor,
   score::{ParetoDominance, Scores},
-  selector::Selector,
+  selector::SelectionExecutor,
   terminator::TerminationExecutor,
   tester::TestExecutor,
 };
@@ -13,12 +13,14 @@ use crate::{
 pub struct Nsga2<
   Solution,
   Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
-  Sel: Selector<Solution, OBJECTIVE_NUM>,
-  Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
-  Mut: MutationOperator<Solution>,
+  Sel: SelectionExecutor<Solution, OBJECTIVE_NUM, SelExecStrat>,
+  Crs: RecombinationOperator<Solution, PARENT_NUM, OFFSPRING_NUM>,
+  Mut: MutationExecutor<Solution, MutExecStrat>,
   Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
   TstExecStrat,
   TerExecStrat,
+  SelExecStrat,
+  MutExecStrat,
   const OBJECTIVE_NUM: usize,
   const PARENT_NUM: usize,
   const OFFSPRING_NUM: usize,
@@ -34,17 +36,21 @@ pub struct Nsga2<
   _solution: PhantomData<Solution>,
   _eva_es: PhantomData<TstExecStrat>,
   _ter_es: PhantomData<TerExecStrat>,
+  _sel_es: PhantomData<SelExecStrat>,
+  _mut_es: PhantomData<MutExecStrat>,
 }
 
 impl<
     Solution,
     Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
-    Sel: Selector<Solution, OBJECTIVE_NUM>,
-    Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
-    Mut: MutationOperator<Solution>,
+    Sel: SelectionExecutor<Solution, OBJECTIVE_NUM, SelExecStrat>,
+    Crs: RecombinationOperator<Solution, PARENT_NUM, OFFSPRING_NUM>,
+    Mut: MutationExecutor<Solution, MutExecStrat>,
     Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
     TstExecStrat,
     TerExecStrat,
+    SelExecStrat,
+    MutExecStrat,
     const OBJECTIVE_NUM: usize,
     const PARENT_NUM: usize,
     const OFFSPRING_NUM: usize,
@@ -58,6 +64,8 @@ impl<
     Ter,
     TstExecStrat,
     TerExecStrat,
+    SelExecStrat,
+    MutExecStrat,
     OBJECTIVE_NUM,
     PARENT_NUM,
     OFFSPRING_NUM,
@@ -87,6 +95,8 @@ impl<
       _solution: PhantomData,
       _eva_es: PhantomData,
       _ter_es: PhantomData,
+      _sel_es: PhantomData,
+      _mut_es: PhantomData,
     }
   }
 }
@@ -107,12 +117,14 @@ type Front = Vec<SolutionIndex>;
 impl<
     Solution,
     Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
-    Sel: Selector<Solution, OBJECTIVE_NUM>,
-    Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
-    Mut: MutationOperator<Solution>,
+    Sel: SelectionExecutor<Solution, OBJECTIVE_NUM, SelExecStrat>,
+    Crs: RecombinationOperator<Solution, PARENT_NUM, OFFSPRING_NUM>,
+    Mut: MutationExecutor<Solution, MutExecStrat>,
     Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
     TstExecStrat,
     TerExecStrat,
+    SelExecStrat,
+    MutExecStrat,
     const OBJECTIVE_NUM: usize,
     const PARENT_NUM: usize,
     const OFFSPRING_NUM: usize,
@@ -126,6 +138,8 @@ impl<
     Ter,
     TstExecStrat,
     TerExecStrat,
+    SelExecStrat,
+    MutExecStrat,
     OBJECTIVE_NUM,
     PARENT_NUM,
     OFFSPRING_NUM,
@@ -164,15 +178,15 @@ impl<
     solutions: &'a [Solution],
     scores: &[Scores<OBJECTIVE_NUM>],
   ) -> Vec<&'a Solution> {
-    self.selector.select(solutions, scores)
+    self.selector.execute_selection(solutions, scores)
   }
 
   fn create(&self, solutions: &[&Solution]) -> Vec<Solution> {
     self.crossover.create(solutions)
   }
 
-  fn mutate(&self, solution: &mut Solution) {
-    self.mutator.mutate(solution)
+  fn mutate(&self, solutions: &mut [Solution]) {
+    self.mutator.execute_mutations(solutions)
   }
 
   fn terminate(&mut self) -> bool {
