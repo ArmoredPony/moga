@@ -33,9 +33,22 @@ pub trait Terminator<S, const N: usize> {
   fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool;
 }
 
+impl<S, const N: usize, F> Terminator<S, N> for F
+where
+  F: FnMut(&[S], &[Scores<N>]) -> bool,
+{
+  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool {
+    self(solutions, scores)
+  }
+}
+
 // TODO: add docs
 pub trait TerminatorExecutor<S, const N: usize, ExecutionStrategy> {
-  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool;
+  fn execute_termination(
+    &mut self,
+    solutions: &[S],
+    scores: &[Scores<N>],
+  ) -> bool;
 }
 
 impl<S, const N: usize, T> TerminatorExecutor<S, N, CustomExecutionStrategy>
@@ -43,8 +56,12 @@ impl<S, const N: usize, T> TerminatorExecutor<S, N, CustomExecutionStrategy>
 where
   T: Terminator<S, N>,
 {
-  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool {
-    Terminator::terminate(self, solutions, scores)
+  fn execute_termination(
+    &mut self,
+    solutions: &[S],
+    scores: &[Scores<N>],
+  ) -> bool {
+    self.terminate(solutions, scores)
   }
 }
 
@@ -53,7 +70,11 @@ impl<S, const N: usize, T> TerminatorExecutor<S, N, SequentialExecutionStrategy>
 where
   T: TerminationCondition<S, N>,
 {
-  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool {
+  fn execute_termination(
+    &mut self,
+    solutions: &[S],
+    scores: &[Scores<N>],
+  ) -> bool {
     solutions
       .iter()
       .zip(scores)
@@ -68,7 +89,11 @@ where
   S: Sync,
   T: TerminationCondition<S, N> + Sync,
 {
-  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool {
+  fn execute_termination(
+    &mut self,
+    solutions: &[S],
+    scores: &[Scores<N>],
+  ) -> bool {
     solutions
       .par_iter()
       .zip(scores)
@@ -83,7 +108,11 @@ where
   S: Sync,
   T: TerminationCondition<S, N> + Sync,
 {
-  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool {
+  fn execute_termination(
+    &mut self,
+    solutions: &[S],
+    scores: &[Scores<N>],
+  ) -> bool {
     let chunk_size = (solutions.len() / rayon::current_num_threads()).max(1);
     solutions
       .chunks(chunk_size)
@@ -128,7 +157,7 @@ mod tests {
   >(
     t: &mut T,
   ) {
-    t.terminate(&[], &[]);
+    t.execute_termination(&[], &[]);
   }
 
   #[test]
