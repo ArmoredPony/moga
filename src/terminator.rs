@@ -9,7 +9,12 @@ pub trait TerminationCondition<S, const N: usize> {
   /// TODO: add docs
   fn terminate(&self, solution: &S, scores: &Scores<N>) -> bool;
 
-  // TODO: add docs
+  /// Creates a wrapper around `Terminator` that marks the given terminator to
+  /// be executed in parallel for **each** solution.
+  ///
+  /// **Parallelization is implemented with [rayon]. As a result, for simple
+  /// tests, parallelization may only decrease performance because of additional
+  /// overhead introduced. Benchmark if in doubt.**
   fn par_each(self) -> ParEachTerminator<S, N, Self>
   where
     Self: Sized,
@@ -20,7 +25,12 @@ pub trait TerminationCondition<S, const N: usize> {
     }
   }
 
-  // TODO: add docs
+  /// Creates a wrapper around `Terminator` that marks the given terminator to
+  /// be executed in parallel for each **batch** of solutions.
+  ///
+  /// **Parallelization is implemented with [rayon]. As a result, for simple
+  /// tests, parallelization may only decrease performance because of additional
+  /// overhead introduced. Benchmark if in doubt.**
   fn par_batch(self) -> ParBatchTerminator<S, N, Self>
   where
     Self: Sized,
@@ -45,26 +55,14 @@ where
 pub trait Terminator<S, const N: usize> {
   /// Takes slices of solutions and their respective scores.
   /// If returns `true`, terminates algorithm's execution.
-  fn terminate(&mut self, solution: &[S], scores: &[Scores<N>]) -> bool;
+  fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool;
 }
 
-/// A wrapper around `Terminator` that marks the given terminator to be executed
-/// in parallel for **each** solution.
-///
-/// **Parallelization is implemented with [rayon]. As a result, for simple
-/// tests, parallelization may only decrease performance because of additional
-/// overhead introduced. Benchmark if in doubt.**
 pub struct ParEachTerminator<S, const N: usize, T: TerminationCondition<S, N>> {
   terminator: T,
   _solution: PhantomData<S>,
 }
 
-/// A wrapper around `Terminator` that marks the given terminator to be executed
-/// in parallel for each **batch** of solutions.
-///
-/// **Parallelization is implemented with [rayon]. As a result, for simple
-/// tests, parallelization may only decrease performance because of additional
-/// overhead introduced. Benchmark if in doubt.**
 pub struct ParBatchTerminator<S, const N: usize, T: TerminationCondition<S, N>>
 {
   terminator: T,
@@ -118,6 +116,7 @@ where
   T: TerminationCondition<S, N> + Sync,
 {
   fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool {
+    // FIXME: wrong impl
     solutions
       .par_iter()
       .zip(scores)

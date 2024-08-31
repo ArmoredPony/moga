@@ -18,7 +18,12 @@ pub trait Objective<S, const N: usize> {
   // TODO: add docs
   fn evaluate(&self, solution: &S) -> Scores<N>;
 
-  // TODO: add docs
+  /// Creates a wrapper around `Objective` that marks the given objective to
+  /// be executed in parallel for **each** solution.
+  ///
+  /// **Parallelization is implemented with [rayon]. As a result, for simple
+  /// tests, parallelization may only decrease performance because of additional
+  /// overhead introduced. Benchmark if in doubt.**
   fn par_each(self) -> ParEachObjective<S, N, Self>
   where
     Self: Sized,
@@ -29,7 +34,12 @@ pub trait Objective<S, const N: usize> {
     }
   }
 
-  // TODO: add docs
+  /// Creates a wrapper around `Objective` that marks the given objective to
+  /// be executed in parallel for each **batch** of solutions.
+  ///
+  /// **Parallelization is implemented with [rayon]. As a result, for simple
+  /// tests, parallelization may only decrease performance because of additional
+  /// overhead introduced. Benchmark if in doubt.**
   fn par_batch(self) -> ParBatchObjective<S, N, Self>
   where
     Self: Sized,
@@ -59,23 +69,11 @@ where
   }
 }
 
-/// A wrapper around `Objective` that marks the given objective to be executed
-/// in parallel for **each** solution.
-///
-/// **Parallelization is implemented with [rayon]. As a result, for simple
-/// tests, parallelization may only decrease performance because of additional
-/// overhead introduced. Benchmark if in doubt.**
 pub struct ParEachObjective<S, const N: usize, O: Objective<S, N>> {
   objective: O,
   _solution: PhantomData<S>,
 }
 
-/// A wrapper around `Objective` that marks the given objective to be executed
-/// in parallel for each **batch** of solutions.
-///
-/// **Parallelization is implemented with [rayon]. As a result, for simple
-/// tests, parallelization may only decrease performance because of additional
-/// overhead introduced. Benchmark if in doubt.**
 pub struct ParBatchObjective<S, const N: usize, O: Objective<S, N>> {
   objective: O,
   _solution: PhantomData<S>,
@@ -92,6 +90,15 @@ pub trait Evaluator<S, const N: usize> {
 // TODO: add docs
 pub trait EvaluatorExecutor<ExecutionStrategy, S, const N: usize> {
   fn evaluate(&self, solutions: &[S]) -> Vec<Scores<N>>;
+}
+
+impl<S, const N: usize, F> Evaluator<S, N> for F
+where
+  F: Fn(&[S]) -> Vec<Scores<N>>,
+{
+  fn evaluate(&self, solutions: &[S]) -> Vec<Scores<N>> {
+    self(solutions)
+  }
 }
 
 impl<S, const N: usize, E> EvaluatorExecutor<CustomExecution, S, N> for E
@@ -157,22 +164,30 @@ mod tests {
   }
 
   #[test]
-  fn test_evaluator_from_closure() {
-    let e = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
-    as_evaluator(&e);
-    as_evaluator(&e.par_each());
-    as_evaluator(&e.par_batch());
+  fn test_objective_from_closure() {
+    let o = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
+    as_evaluator(&o);
+    as_evaluator(&o.par_each());
+    as_evaluator(&o.par_batch());
   }
 
   #[test]
-  fn test_evaluator_from_closure_array() {
+  fn test_objective_from_closure_array() {
     let o1 = |v: &Solution| v * 1.0;
     let o2 = |v: &Solution| v * 2.0;
     let o3 = |v: &Solution| v * 3.0;
-    let e = [o1, o2, o3];
+    let o = [o1, o2, o3];
+    as_evaluator(&o);
+    as_evaluator(&o.par_each());
+    as_evaluator(&o.par_batch());
+  }
+
+  #[test]
+  fn test_evaluator_from_closure() {
+    let e = |solutions: &[Solution]| {
+      solutions.iter().map(|_| [1.0, 2.0, 3.0]).collect()
+    };
     as_evaluator(&e);
-    as_evaluator(&e.par_each());
-    as_evaluator(&e.par_batch());
   }
 
   struct EvaluateToZero {}
