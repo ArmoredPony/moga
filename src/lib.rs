@@ -1,5 +1,5 @@
 pub mod crossover;
-mod execution;
+pub mod execution;
 pub mod mutator;
 pub mod optimizer;
 pub mod score;
