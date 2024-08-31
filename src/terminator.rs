@@ -78,7 +78,7 @@ where
     solutions
       .iter()
       .zip(scores)
-      .any(|(sol, sc)| TerminationCondition::terminate(self, sol, sc))
+      .any(|(sol, sc)| self.terminate(sol, sc))
   }
 }
 
@@ -150,7 +150,7 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_terminator<
+  fn takes_terminator<
     ES,
     const N: usize,
     T: TerminatorExecutor<Solution, N, ES>,
@@ -161,25 +161,46 @@ mod tests {
   }
 
   #[test]
-  fn test_terminator_from_closure() {
-    let mut t = |solution: &Solution, scores: &Scores<3>| {
+  fn test_termination_condition_from_closure() {
+    let mut term_cond = |solution: &Solution, scores: &Scores<3>| {
       *solution > 0.0 && scores.iter().sum::<f32>() == 0.0
     };
-    as_terminator(&mut t);
-    as_terminator(&mut t.par_each());
-    as_terminator(&mut t.par_batch());
+    takes_terminator(&mut term_cond);
+    takes_terminator(&mut term_cond.par_each());
+    takes_terminator(&mut term_cond.par_batch());
   }
 
-  struct TerminateInstantly {}
-  impl<S> Terminator<S, 3> for TerminateInstantly {
-    fn terminate(&mut self, _: &[S], _: &[Scores<3>]) -> bool {
-      true
+  #[test]
+  fn test_terminatior_from_closure() {
+    let mut terminator = |solutions: &[Solution], scores: &[Scores<3>]| {
+      solutions.iter().any(|s| *s > 0.0) || scores.iter().any(|s| s[0] == 0.0)
+    };
+    takes_terminator(&mut terminator);
+  }
+
+  #[test]
+  fn test_custom_termination_condition() {
+    struct CustomTerminationCondition {}
+    impl<S> TerminationCondition<S, 3> for CustomTerminationCondition {
+      fn terminate(&self, _: &S, _: &Scores<3>) -> bool {
+        true
+      }
     }
+
+    let mut term_cond = CustomTerminationCondition {};
+    takes_terminator(&mut term_cond);
   }
 
   #[test]
   fn test_custom_terminator() {
-    let mut t = TerminateInstantly {};
-    as_terminator(&mut t);
+    struct CustomTerminator {}
+    impl<S> Terminator<S, 3> for CustomTerminator {
+      fn terminate(&mut self, _: &[S], _: &[Scores<3>]) -> bool {
+        true
+      }
+    }
+
+    let mut terminator = CustomTerminator {};
+    takes_terminator(&mut terminator);
   }
 }

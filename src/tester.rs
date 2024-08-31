@@ -74,7 +74,7 @@ where
   E: Tester<S, N>,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
-    Tester::test(self, solutions)
+    self.test(solutions)
   }
 }
 
@@ -83,7 +83,7 @@ where
   T: Test<S, N>,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
-    solutions.iter().map(|s| Test::test(self, s)).collect()
+    solutions.iter().map(|s| self.test(s)).collect()
   }
 }
 
@@ -122,16 +122,16 @@ mod tests {
 
   type Solution = f32;
 
-  fn as_tester<ES, const N: usize, E: TestExecutor<Solution, N, ES>>(e: &E) {
+  fn takes_tester<ES, const N: usize, E: TestExecutor<Solution, N, ES>>(e: &E) {
     e.execute_tests(&[]);
   }
 
   #[test]
   fn test_test_from_closure() {
     let test = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
-    as_tester(&test);
-    as_tester(&test.par_each());
-    as_tester(&test.par_batch());
+    takes_tester(&test);
+    takes_tester(&test.par_each());
+    takes_tester(&test.par_batch());
   }
 
   #[test]
@@ -140,9 +140,9 @@ mod tests {
     let f2 = |v: &Solution| v * 2.0;
     let f3 = |v: &Solution| v * 3.0;
     let test = [f1, f2, f3];
-    as_tester(&test);
-    as_tester(&test.par_each());
-    as_tester(&test.par_batch());
+    takes_tester(&test);
+    takes_tester(&test.par_each());
+    takes_tester(&test.par_batch());
   }
 
   #[test]
@@ -150,19 +150,32 @@ mod tests {
     let tester = |solutions: &[Solution]| {
       solutions.iter().map(|_| [1.0, 2.0, 3.0]).collect()
     };
-    as_tester(&tester);
+    takes_tester(&tester);
   }
 
-  struct CustomTester {} // always returns [0.0] for each solution
-  impl<S> Tester<S, 1> for CustomTester {
-    fn test(&self, solutions: &[S]) -> Vec<Scores<1>> {
-      solutions.iter().map(|_| [0.0]).collect()
+  #[test]
+  fn test_custom_test() {
+    struct CustomTest {}
+    impl<S> Test<S, 1> for CustomTest {
+      fn test(&self, _: &S) -> Scores<1> {
+        [0.0]
+      }
     }
+
+    let tester = CustomTest {};
+    takes_tester(&tester);
   }
 
   #[test]
   fn test_custom_tester() {
+    struct CustomTester {}
+    impl<S> Tester<S, 1> for CustomTester {
+      fn test(&self, solutions: &[S]) -> Vec<Scores<1>> {
+        solutions.iter().map(|_| [0.0]).collect()
+      }
+    }
+
     let tester = CustomTester {};
-    as_tester(&tester);
+    takes_tester(&tester);
   }
 }
