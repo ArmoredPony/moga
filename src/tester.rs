@@ -1,6 +1,10 @@
 use rayon::prelude::*;
 
-use crate::{execution::*, score::Scores};
+use crate::{
+  execution::*,
+  operator::{IntoPar, ParBatch, ParEach, TestOperatorTag},
+  score::Scores,
+};
 
 /// Evaluates solution's fitness, calculating an array of scores.
 /// `test` call returns an array of `Scores`. If you want to test a solution
@@ -37,7 +41,10 @@ where
   }
 }
 
-impl<S, const N: usize, T> IntoPar<S, N> for T where T: Test<S, N> {}
+impl<S, const N: usize, T> IntoPar<TestOperatorTag, S, N> for T where
+  T: Test<S, N>
+{
+}
 
 /// Tests performance of each solution, calculating their scores.
 /// The target score of each objective in test is deemed to be 0.
@@ -62,7 +69,7 @@ pub trait TestExecutor<S, const N: usize, ExecutionStrategy> {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }
 
-impl<S, const N: usize, E> TestExecutor<S, N, CustomExecution> for E
+impl<S, const N: usize, E> TestExecutor<S, N, CustomExecutionStrategy> for E
 where
   E: Tester<S, N>,
 {
@@ -71,7 +78,7 @@ where
   }
 }
 
-impl<const N: usize, S, T> TestExecutor<S, N, SequentialExecution> for T
+impl<const N: usize, S, T> TestExecutor<S, N, SequentialExecutionStrategy> for T
 where
   T: Test<S, N>,
 {
@@ -80,19 +87,22 @@ where
   }
 }
 
-impl<const N: usize, S, T> TestExecutor<S, N, ParallelEachExecution>
-  for ParEach<S, T>
+impl<const N: usize, S, T> TestExecutor<S, N, ParallelEachExecutionStrategy>
+  for ParEach<TestOperatorTag, S, T>
 where
   S: Sync,
   T: Test<S, N> + Sync,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
-    solutions.par_iter().map(|s| self.test(s)).collect()
+    solutions
+      .par_iter()
+      .map(|s| self.operator().test(s))
+      .collect()
   }
 }
 
-impl<const N: usize, S, T> TestExecutor<S, N, ParallelBatchExecution>
-  for ParBatch<S, T>
+impl<const N: usize, S, T> TestExecutor<S, N, ParallelBatchExecutionStrategy>
+  for ParBatch<TestOperatorTag, S, T>
 where
   S: Sync,
   T: Test<S, N> + Sync,
@@ -101,7 +111,7 @@ where
     let chunk_size = (solutions.len() / rayon::current_num_threads()).max(1);
     solutions
       .par_chunks(chunk_size)
-      .flat_map_iter(|chunk| chunk.iter().map(|s| self.test(s)))
+      .flat_map_iter(|chunk| chunk.iter().map(|s| self.operator().test(s)))
       .collect()
   }
 }

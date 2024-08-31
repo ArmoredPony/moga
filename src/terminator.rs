@@ -74,7 +74,8 @@ pub trait TerminatorExecutor<ExecutionStrategy, S, const N: usize> {
   fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool;
 }
 
-impl<S, const N: usize, T> TerminatorExecutor<CustomExecution, S, N> for T
+impl<S, const N: usize, T> TerminatorExecutor<CustomExecutionStrategy, S, N>
+  for T
 where
   T: Terminator<S, N>,
 {
@@ -83,7 +84,8 @@ where
   }
 }
 
-impl<S, const N: usize, T> TerminatorExecutor<SequentialExecution, S, N> for T
+impl<S, const N: usize, T> TerminatorExecutor<SequentialExecutionStrategy, S, N>
+  for T
 where
   T: TerminationCondition<S, N>,
 {
@@ -95,7 +97,8 @@ where
   }
 }
 
-impl<S, const N: usize, T> TerminatorExecutor<ParallelEachExecution, S, N>
+impl<S, const N: usize, T>
+  TerminatorExecutor<ParallelEachExecutionStrategy, S, N>
   for ParEachTerminator<S, N, T>
 where
   S: Sync,
@@ -109,7 +112,8 @@ where
   }
 }
 
-impl<S, const N: usize, T> TerminatorExecutor<ParallelBatchExecution, S, N>
+impl<S, const N: usize, T>
+  TerminatorExecutor<ParallelBatchExecutionStrategy, S, N>
   for ParBatchTerminator<S, N, T>
 where
   S: Sync,
