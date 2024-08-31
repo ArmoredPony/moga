@@ -91,13 +91,6 @@ where
   }
 }
 
-/// `MutationOperator` that doesn't mutate given value.
-pub struct NoMutation();
-
-impl<S> MutationOperator<S> for NoMutation {
-  fn mutate(&self, _: &mut S) {}
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
