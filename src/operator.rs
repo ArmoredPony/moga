@@ -34,7 +34,7 @@ impl<OperatorTag, S, O> ParBatch<OperatorTag, S, O> {
   }
 }
 
-pub trait IntoPar<OperatorTag, S, const N: usize> {
+pub trait IntoParOperator<OperatorTag, S, const N: usize> {
   /// Creates a wrapper around given operator that marks it to
   /// be executed in parallel for **each** solution.
   ///

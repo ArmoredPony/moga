@@ -2,17 +2,17 @@ use rayon::prelude::*;
 
 use crate::{
   execution::*,
-  operator::{IntoPar, ParBatch, ParEach, TerminationOperatorTag},
+  operator::{IntoParOperator, ParBatch, ParEach, TerminationOperatorTag},
   score::Scores,
 };
 
 /// TODO: add docs
-pub trait TerminationCondition<S, const N: usize> {
+pub trait TerminationOperator<S, const N: usize> {
   /// TODO: add docs
   fn terminate(&self, solution: &S, scores: &Scores<N>) -> bool;
 }
 
-impl<S, const N: usize, F> TerminationCondition<S, N> for F
+impl<S, const N: usize, F> TerminationOperator<S, N> for F
 where
   F: Fn(&S, &Scores<N>) -> bool,
 {
@@ -21,8 +21,8 @@ where
   }
 }
 
-impl<S, const N: usize, T> IntoPar<TerminationOperatorTag, S, N> for T where
-  T: TerminationCondition<S, N>
+impl<S, const N: usize, T> IntoParOperator<TerminationOperatorTag, S, N> for T where
+  T: TerminationOperator<S, N>
 {
 }
 
@@ -43,7 +43,8 @@ where
 }
 
 // TODO: add docs
-pub trait TerminatorExecutor<S, const N: usize, ExecutionStrategy> {
+// TODO: make private
+pub trait TerminationExecutor<S, const N: usize, ExecutionStrategy> {
   fn execute_termination(
     &mut self,
     solutions: &[S],
@@ -51,7 +52,7 @@ pub trait TerminatorExecutor<S, const N: usize, ExecutionStrategy> {
   ) -> bool;
 }
 
-impl<S, const N: usize, T> TerminatorExecutor<S, N, CustomExecutionStrategy>
+impl<S, const N: usize, T> TerminationExecutor<S, N, CustomExecutionStrategy>
   for T
 where
   T: Terminator<S, N>,
@@ -65,10 +66,10 @@ where
   }
 }
 
-impl<S, const N: usize, T> TerminatorExecutor<S, N, SequentialExecutionStrategy>
-  for T
+impl<S, const N: usize, T>
+  TerminationExecutor<S, N, SequentialExecutionStrategy> for T
 where
-  T: TerminationCondition<S, N>,
+  T: TerminationOperator<S, N>,
 {
   fn execute_termination(
     &mut self,
@@ -83,11 +84,11 @@ where
 }
 
 impl<S, const N: usize, T>
-  TerminatorExecutor<S, N, ParallelEachExecutionStrategy>
+  TerminationExecutor<S, N, ParallelEachExecutionStrategy>
   for ParEach<TerminationOperatorTag, S, T>
 where
   S: Sync,
-  T: TerminationCondition<S, N> + Sync,
+  T: TerminationOperator<S, N> + Sync,
 {
   fn execute_termination(
     &mut self,
@@ -102,11 +103,11 @@ where
 }
 
 impl<S, const N: usize, T>
-  TerminatorExecutor<S, N, ParallelBatchExecutionStrategy>
+  TerminationExecutor<S, N, ParallelBatchExecutionStrategy>
   for ParBatch<TerminationOperatorTag, S, T>
 where
   S: Sync,
-  T: TerminationCondition<S, N> + Sync,
+  T: TerminationOperator<S, N> + Sync,
 {
   fn execute_termination(
     &mut self,
@@ -129,7 +130,7 @@ where
 }
 
 /// A `Terminator` that ignores solutions and terminates the algorithm as soon
-/// as a certain number of generations has passed.
+/// as a certain number of generations had passed.
 pub struct GenerationsTerminator(pub usize);
 
 impl<S, const N: usize> Terminator<S, N> for GenerationsTerminator {
@@ -153,7 +154,7 @@ mod tests {
   fn takes_terminator<
     ES,
     const N: usize,
-    T: TerminatorExecutor<Solution, N, ES>,
+    T: TerminationExecutor<Solution, N, ES>,
   >(
     t: &mut T,
   ) {
@@ -161,13 +162,13 @@ mod tests {
   }
 
   #[test]
-  fn test_termination_condition_from_closure() {
-    let mut term_cond = |solution: &Solution, scores: &Scores<3>| {
+  fn test_termination_operator_from_closure() {
+    let mut termination_op = |solution: &Solution, scores: &Scores<3>| {
       *solution > 0.0 && scores.iter().sum::<f32>() == 0.0
     };
-    takes_terminator(&mut term_cond);
-    takes_terminator(&mut term_cond.par_each());
-    takes_terminator(&mut term_cond.par_batch());
+    takes_terminator(&mut termination_op);
+    takes_terminator(&mut termination_op.par_each());
+    takes_terminator(&mut termination_op.par_batch());
   }
 
   #[test]
@@ -179,16 +180,16 @@ mod tests {
   }
 
   #[test]
-  fn test_custom_termination_condition() {
-    struct CustomTerminationCondition {}
-    impl<S> TerminationCondition<S, 3> for CustomTerminationCondition {
+  fn test_custom_termination_operator() {
+    struct CustomTerminationOperator {}
+    impl<S> TerminationOperator<S, 3> for CustomTerminationOperator {
       fn terminate(&self, _: &S, _: &Scores<3>) -> bool {
         true
       }
     }
 
-    let mut term_cond = CustomTerminationCondition {};
-    takes_terminator(&mut term_cond);
+    let mut termination_op = CustomTerminationOperator {};
+    takes_terminator(&mut termination_op);
   }
 
   #[test]

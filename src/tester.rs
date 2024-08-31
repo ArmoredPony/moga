@@ -2,7 +2,7 @@ use rayon::prelude::*;
 
 use crate::{
   execution::*,
-  operator::{IntoPar, ParBatch, ParEach, TestOperatorTag},
+  operator::{IntoParOperator, ParBatch, ParEach, TestOperatorTag},
   score::Scores,
 };
 
@@ -17,13 +17,13 @@ use crate::{
 /// # Examples
 ///
 /// <pre> TODO: add them later </pre>
-pub trait Test<S, const N: usize> {
+pub trait TestOperator<S, const N: usize> {
   /// Returns performance scores for given solution.
   /// The closer a score is to 0 - the better.
   fn test(&self, solution: &S) -> Scores<N>;
 }
 
-impl<S, const N: usize, F> Test<S, N> for [F; N]
+impl<S, const N: usize, F> TestOperator<S, N> for [F; N]
 where
   F: Fn(&S) -> f32,
 {
@@ -32,7 +32,7 @@ where
   }
 }
 
-impl<S, const N: usize, F> Test<S, N> for F
+impl<S, const N: usize, F> TestOperator<S, N> for F
 where
   F: Fn(&S) -> Scores<N>,
 {
@@ -41,8 +41,8 @@ where
   }
 }
 
-impl<S, const N: usize, T> IntoPar<TestOperatorTag, S, N> for T where
-  T: Test<S, N>
+impl<S, const N: usize, T> IntoParOperator<TestOperatorTag, S, N> for T where
+  T: TestOperator<S, N>
 {
 }
 
@@ -80,7 +80,7 @@ where
 
 impl<const N: usize, S, T> TestExecutor<S, N, SequentialExecutionStrategy> for T
 where
-  T: Test<S, N>,
+  T: TestOperator<S, N>,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
     solutions.iter().map(|s| self.test(s)).collect()
@@ -91,7 +91,7 @@ impl<const N: usize, S, T> TestExecutor<S, N, ParallelEachExecutionStrategy>
   for ParEach<TestOperatorTag, S, T>
 where
   S: Sync,
-  T: Test<S, N> + Sync,
+  T: TestOperator<S, N> + Sync,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
     solutions
@@ -105,7 +105,7 @@ impl<const N: usize, S, T> TestExecutor<S, N, ParallelBatchExecutionStrategy>
   for ParBatch<TestOperatorTag, S, T>
 where
   S: Sync,
-  T: Test<S, N> + Sync,
+  T: TestOperator<S, N> + Sync,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
     let chunk_size = (solutions.len() / rayon::current_num_threads()).max(1);
@@ -127,22 +127,22 @@ mod tests {
   }
 
   #[test]
-  fn test_test_from_closure() {
-    let test = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
-    takes_tester(&test);
-    takes_tester(&test.par_each());
-    takes_tester(&test.par_batch());
+  fn test_test_operator_from_closure() {
+    let test_op = |v: &Solution| [v * 1.0, v * 2.0, v * 3.0];
+    takes_tester(&test_op);
+    takes_tester(&test_op.par_each());
+    takes_tester(&test_op.par_batch());
   }
 
   #[test]
-  fn test_test_from_closure_array() {
+  fn test_test_operator_from_closure_array() {
     let f1 = |v: &Solution| v * 1.0;
     let f2 = |v: &Solution| v * 2.0;
     let f3 = |v: &Solution| v * 3.0;
-    let test = [f1, f2, f3];
-    takes_tester(&test);
-    takes_tester(&test.par_each());
-    takes_tester(&test.par_batch());
+    let test_op = [f1, f2, f3];
+    takes_tester(&test_op);
+    takes_tester(&test_op.par_each());
+    takes_tester(&test_op.par_batch());
   }
 
   #[test]
@@ -154,16 +154,16 @@ mod tests {
   }
 
   #[test]
-  fn test_custom_test() {
-    struct CustomTest {}
-    impl<S> Test<S, 1> for CustomTest {
+  fn test_custom_test_operator() {
+    struct CustomTestOperator {}
+    impl<S> TestOperator<S, 1> for CustomTestOperator {
       fn test(&self, _: &S) -> Scores<1> {
         [0.0]
       }
     }
 
-    let tester = CustomTest {};
-    takes_tester(&tester);
+    let test_op = CustomTestOperator {};
+    takes_tester(&test_op);
   }
 
   #[test]

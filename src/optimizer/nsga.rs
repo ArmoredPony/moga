@@ -3,10 +3,10 @@ use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 use super::Optimizer;
 use crate::{
   crossover::Crossover,
-  mutator::Mutator,
+  mutator::MutationOperator,
   score::{ParetoDominance, Scores},
   selector::Selector,
-  terminator::TerminatorExecutor,
+  terminator::TerminationExecutor,
   tester::TestExecutor,
 };
 
@@ -15,8 +15,8 @@ pub struct Nsga2<
   Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
   Sel: Selector<Solution, OBJECTIVE_NUM>,
   Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
-  Mut: Mutator<Solution>,
-  Ter: TerminatorExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
+  Mut: MutationOperator<Solution>,
+  Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
   TstExecStrat,
   TerExecStrat,
   const OBJECTIVE_NUM: usize,
@@ -41,8 +41,8 @@ impl<
     Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
     Sel: Selector<Solution, OBJECTIVE_NUM>,
     Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
-    Mut: Mutator<Solution>,
-    Ter: TerminatorExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
+    Mut: MutationOperator<Solution>,
+    Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
     TstExecStrat,
     TerExecStrat,
     const OBJECTIVE_NUM: usize,
@@ -109,8 +109,8 @@ impl<
     Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
     Sel: Selector<Solution, OBJECTIVE_NUM>,
     Crs: Crossover<Solution, PARENT_NUM, OFFSPRING_NUM>,
-    Mut: Mutator<Solution>,
-    Ter: TerminatorExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
+    Mut: MutationOperator<Solution>,
+    Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
     TstExecStrat,
     TerExecStrat,
     const OBJECTIVE_NUM: usize,
@@ -176,7 +176,9 @@ impl<
   }
 
   fn terminate(&mut self) -> bool {
-    self.terminator.terminate(&self.solutions, &self.scores)
+    self
+      .terminator
+      .execute_termination(&self.solutions, &self.scores)
   }
 
   fn truncate(
