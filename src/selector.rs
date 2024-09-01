@@ -206,7 +206,7 @@ mod tests {
   //    |solutions: &'a [Solution], _: &'b [Scores<3>]| -> Vec<&'a Solution> {
   //      solutions.iter().collect::<Vec<&'a Solution>>()
   //     };
-  //   as_selector(&select_all);
+  //   takes_selector(&select_all);
   // }
 
   #[test]
