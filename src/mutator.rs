@@ -3,12 +3,12 @@ use rayon::prelude::*;
 use crate::{execution::*, operator::*};
 
 /// Mutates a solution.
-pub trait MutationOperator<S> {
+pub trait Mutation<S> {
   /// Takes a solution and mutates it.
   fn mutate(&self, solution: &mut S);
 }
 
-impl<S, F> MutationOperator<S> for F
+impl<S, F> Mutation<S> for F
 where
   F: Fn(&mut S),
 {
@@ -17,13 +17,9 @@ where
   }
 }
 
-impl<S, M> ParEach<MutationOperatorTag, S, 0, 0> for M where
-  M: MutationOperator<S>
-{
-}
+impl<S, M> ParEach<MutationOperatorTag, S, 0, 0> for M where M: Mutation<S> {}
 
-impl<S, M> ParBatch<MutationOperatorTag, S, 0> for M where M: MutationOperator<S>
-{}
+impl<S, M> ParBatch<MutationOperatorTag, S, 0> for M where M: Mutation<S> {}
 
 /// Mutates solutions.
 pub trait Mutator<S> {
@@ -57,7 +53,7 @@ where
 
 impl<S, M> MutationExecutor<S, SequentialExecutionStrategy> for M
 where
-  M: MutationOperator<S>,
+  M: Mutation<S>,
 {
   fn execute_mutations(&self, solutions: &mut [S]) {
     solutions.iter_mut().for_each(|s| self.mutate(s));
@@ -68,7 +64,7 @@ impl<S, M> MutationExecutor<S, ParallelEachExecutionStrategy>
   for ParEachOperator<MutationOperatorTag, S, M>
 where
   S: Send + Sync,
-  M: MutationOperator<S> + Sync,
+  M: Mutation<S> + Sync,
 {
   fn execute_mutations(&self, solutions: &mut [S]) {
     solutions
@@ -81,7 +77,7 @@ impl<S, M> MutationExecutor<S, ParallelBatchExecutionStrategy>
   for ParBatchOperator<MutationOperatorTag, S, M>
 where
   S: Send + Sync,
-  M: MutationOperator<S> + Sync,
+  M: Mutation<S> + Sync,
 {
   fn execute_mutations(&self, solutions: &mut [S]) {
     let chunk_size = (solutions.len() / rayon::current_num_threads()).max(1);
@@ -102,11 +98,11 @@ mod tests {
   }
 
   #[test]
-  fn test_mutation_operator_from_closure() {
-    let mutation_op = |solution: &mut Solution| *solution *= 2.0;
-    takes_mutator(&mutation_op);
-    takes_mutator(&mutation_op.par_each());
-    takes_mutator(&mutation_op.par_batch());
+  fn test_mutation_from_closure() {
+    let mutation = |solution: &mut Solution| *solution *= 2.0;
+    takes_mutator(&mutation);
+    takes_mutator(&mutation.par_each());
+    takes_mutator(&mutation.par_batch());
   }
 
   #[test]
@@ -119,13 +115,13 @@ mod tests {
 
   #[test]
   fn test_custom_mutation() {
-    struct CustomMutationOperator {}
-    impl<S> MutationOperator<S> for CustomMutationOperator {
+    struct CustomMutation {}
+    impl<S> Mutation<S> for CustomMutation {
       fn mutate(&self, _: &mut S) {}
     }
 
-    let mutation_op = CustomMutationOperator {};
-    takes_mutator(&mutation_op);
+    let mutation = CustomMutation {};
+    takes_mutator(&mutation);
   }
 
   #[test]

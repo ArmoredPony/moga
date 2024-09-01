@@ -3,15 +3,15 @@ use rayon::prelude::*;
 
 use crate::{execution::*, operator::*, score::Scores};
 
-/// Decides if a solution should be selected as a parent for next population
-/// or not.
-pub trait SelectionOperator<S, const N: usize> {
+/// Condition by which it is determined whether a solution will be selected as
+/// a parent for next population or not.
+pub trait Selection<S, const N: usize> {
   /// If returns true, then given solution will be selected as a parent for
   /// next population.
   fn select(&self, solution: &S, scores: &Scores<N>) -> bool;
 }
 
-impl<S, const N: usize, F> SelectionOperator<S, N> for F
+impl<S, const N: usize, F> Selection<S, N> for F
 where
   F: Fn(&S, &Scores<N>) -> bool,
 {
@@ -21,11 +21,11 @@ where
 }
 
 impl<S, const N: usize, L> ParEach<SelectionOperatorTag, S, N, 0> for L where
-  L: SelectionOperator<S, N>
+  L: Selection<S, N>
 {
 }
 impl<S, const N: usize, L> ParBatch<SelectionOperatorTag, S, N> for L where
-  L: SelectionOperator<S, N>
+  L: Selection<S, N>
 {
 }
 
@@ -73,7 +73,7 @@ where
 impl<S, const N: usize, L> SelectionExecutor<S, N, SequentialExecutionStrategy>
   for L
 where
-  L: SelectionOperator<S, N>,
+  L: Selection<S, N>,
 {
   fn execute_selection<'a>(
     &self,
@@ -93,7 +93,7 @@ impl<S, const N: usize, L>
   for ParEachOperator<SelectionOperatorTag, S, L>
 where
   S: Sync,
-  L: SelectionOperator<S, N> + Sync,
+  L: Selection<S, N> + Sync,
 {
   fn execute_selection<'a>(
     &self,
@@ -113,7 +113,7 @@ impl<S, const N: usize, L>
   for ParBatchOperator<SelectionOperatorTag, S, L>
 where
   S: Sync,
-  L: SelectionOperator<S, N> + Sync,
+  L: Selection<S, N> + Sync,
 {
   fn execute_selection<'a>(
     &self,
@@ -164,26 +164,24 @@ impl<const N: usize, S> Selector<S, N> for RandomSelector {
   }
 }
 
+// TODO: add more selectors
+
 #[cfg(test)]
 mod tests {
   use super::*;
 
   type Solution = f32;
 
-  fn takes_selector<
-    ES,
-    const N: usize,
-    L: SelectionExecutor<Solution, N, ES>,
-  >(
-    l: &mut L,
-  ) {
+  fn takes_selector<ES, L: SelectionExecutor<Solution, 3, ES>>(l: &mut L) {
     l.execute_selection(&[], &[]);
   }
 
   #[test]
-  fn test_selection_operator_from_closure() {
-    let mut selection_op = |_: &Solution, _: &Scores<0>| true;
-    takes_selector(&mut selection_op);
+  fn test_selection_from_closure() {
+    let mut selection = |_: &Solution, _: &Scores<3>| true;
+    takes_selector(&mut selection);
+    takes_selector(&mut selection.par_each());
+    takes_selector(&mut selection.par_batch());
   }
 
   #[test]
@@ -210,22 +208,21 @@ mod tests {
   // }
 
   #[test]
-  fn test_custom_selection_operator() {
-    struct CustomSelectionOperator {}
-    impl<S, const N: usize> SelectionOperator<S, N> for CustomSelectionOperator {
+  fn test_custom_selection() {
+    struct CustomSelection {}
+    impl<S, const N: usize> Selection<S, N> for CustomSelection {
       fn select(&self, _: &S, _: &Scores<N>) -> bool {
         true
       }
     }
 
-    let mut selection_op = CustomSelectionOperator {};
-    takes_selector::<SequentialExecutionStrategy, 0, CustomSelectionOperator>(
-      &mut selection_op,
-    );
+    let mut selection = CustomSelection {};
+    takes_selector(&mut selection);
   }
 
   #[test]
   fn test_custom_selectior() {
+    #[derive(Clone, Copy)]
     struct CustomSelector {}
     impl<S, const N: usize> Selector<S, N> for CustomSelector {
       fn select<'a>(&self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
@@ -234,24 +231,26 @@ mod tests {
     }
 
     let mut selector = CustomSelector {};
-    takes_selector::<CustomExecutionStrategy, 0, CustomSelector>(&mut selector);
+    takes_selector(&mut selector);
+    takes_selector(&mut selector);
+    takes_selector(&mut selector);
   }
 
   #[test]
   fn test_all_selector() {
     let mut selector = AllSelector();
-    takes_selector::<CustomExecutionStrategy, 0, AllSelector>(&mut selector);
+    takes_selector(&mut selector);
   }
 
   #[test]
   fn test_first_selector() {
     let mut selector = FirstSelector(10);
-    takes_selector::<CustomExecutionStrategy, 0, FirstSelector>(&mut selector);
+    takes_selector(&mut selector);
   }
 
   #[test]
   fn test_random_selector() {
     let mut selector = RandomSelector(10);
-    takes_selector::<CustomExecutionStrategy, 0, RandomSelector>(&mut selector);
+    takes_selector(&mut selector);
   }
 }
