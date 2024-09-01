@@ -1,11 +1,7 @@
 use rand::prelude::*;
 use rayon::prelude::*;
 
-use crate::{
-  execution::*,
-  operator::{IntoParOperator, ParBatch, ParEach, SelectionOperatorTag},
-  score::Scores,
-};
+use crate::{execution::*, operator::*, score::Scores};
 
 /// Decides if a solution should be selected as a parent for next population
 /// or not.
@@ -24,7 +20,11 @@ where
   }
 }
 
-impl<S, const N: usize, L> IntoParOperator<SelectionOperatorTag, S, N> for L where
+impl<S, const N: usize, L> ParEach<SelectionOperatorTag, S, N> for L where
+  L: SelectionOperator<S, N>
+{
+}
+impl<S, const N: usize, L> ParBatch<SelectionOperatorTag, S, N> for L where
   L: SelectionOperator<S, N>
 {
 }
@@ -90,7 +90,7 @@ where
 
 impl<S, const N: usize, L>
   SelectionExecutor<S, N, ParallelEachExecutionStrategy>
-  for ParEach<SelectionOperatorTag, S, L>
+  for ParEachOperator<SelectionOperatorTag, S, L>
 where
   S: Sync,
   L: SelectionOperator<S, N> + Sync,
@@ -110,7 +110,7 @@ where
 
 impl<S, const N: usize, L>
   SelectionExecutor<S, N, ParallelBatchExecutionStrategy>
-  for ParBatch<SelectionOperatorTag, S, L>
+  for ParBatchOperator<SelectionOperatorTag, S, L>
 where
   S: Sync,
   L: SelectionOperator<S, N> + Sync,

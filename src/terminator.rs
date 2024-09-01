@@ -1,10 +1,6 @@
 use rayon::prelude::*;
 
-use crate::{
-  execution::*,
-  operator::{IntoParOperator, ParBatch, ParEach, TerminationOperatorTag},
-  score::Scores,
-};
+use crate::{execution::*, operator::*, score::Scores};
 
 /// TODO: add docs
 pub trait TerminationOperator<S, const N: usize> {
@@ -21,7 +17,12 @@ where
   }
 }
 
-impl<S, const N: usize, T> IntoParOperator<TerminationOperatorTag, S, N> for T where
+impl<S, const N: usize, T> ParEach<TerminationOperatorTag, S, N> for T where
+  T: TerminationOperator<S, N>
+{
+}
+
+impl<S, const N: usize, T> ParBatch<TerminationOperatorTag, S, N> for T where
   T: TerminationOperator<S, N>
 {
 }
@@ -85,7 +86,7 @@ where
 
 impl<S, const N: usize, T>
   TerminationExecutor<S, N, ParallelEachExecutionStrategy>
-  for ParEach<TerminationOperatorTag, S, T>
+  for ParEachOperator<TerminationOperatorTag, S, T>
 where
   S: Sync,
   T: TerminationOperator<S, N> + Sync,
@@ -104,7 +105,7 @@ where
 
 impl<S, const N: usize, T>
   TerminationExecutor<S, N, ParallelBatchExecutionStrategy>
-  for ParBatch<TerminationOperatorTag, S, T>
+  for ParBatchOperator<TerminationOperatorTag, S, T>
 where
   S: Sync,
   T: TerminationOperator<S, N> + Sync,

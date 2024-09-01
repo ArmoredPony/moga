@@ -1,9 +1,6 @@
 use rayon::prelude::*;
 
-use crate::{
-  execution::*,
-  operator::{IntoParOperator, MutationOperatorTag, ParBatch, ParEach},
-};
+use crate::{execution::*, operator::*};
 
 /// Mutates a solution.
 pub trait MutationOperator<S> {
@@ -20,10 +17,10 @@ where
   }
 }
 
-impl<S, M> IntoParOperator<MutationOperatorTag, S, 0> for M where
-  M: MutationOperator<S>
-{
-}
+impl<S, M> ParEach<MutationOperatorTag, S, 0> for M where M: MutationOperator<S> {}
+
+impl<S, M> ParBatch<MutationOperatorTag, S, 0> for M where M: MutationOperator<S>
+{}
 
 /// Mutates solutions.
 pub trait Mutator<S> {
@@ -65,7 +62,7 @@ where
 }
 
 impl<S, M> MutationExecutor<S, ParallelEachExecutionStrategy>
-  for ParEach<MutationOperatorTag, S, M>
+  for ParEachOperator<MutationOperatorTag, S, M>
 where
   S: Send + Sync,
   M: MutationOperator<S> + Sync,
@@ -78,7 +75,7 @@ where
 }
 
 impl<S, M> MutationExecutor<S, ParallelBatchExecutionStrategy>
-  for ParBatch<MutationOperatorTag, S, M>
+  for ParBatchOperator<MutationOperatorTag, S, M>
 where
   S: Send + Sync,
   M: MutationOperator<S> + Sync,

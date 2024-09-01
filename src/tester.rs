@@ -1,10 +1,6 @@
 use rayon::prelude::*;
 
-use crate::{
-  execution::*,
-  operator::{IntoParOperator, ParBatch, ParEach, TestOperatorTag},
-  score::Scores,
-};
+use crate::{execution::*, operator::*, score::Scores};
 
 /// Evaluates solution's fitness, calculating an array of scores.
 /// `test` call returns an array of `Scores`. If you want to test a solution
@@ -41,7 +37,12 @@ where
   }
 }
 
-impl<S, const N: usize, T> IntoParOperator<TestOperatorTag, S, N> for T where
+impl<S, const N: usize, T> ParEach<TestOperatorTag, S, N> for T where
+  T: TestOperator<S, N>
+{
+}
+
+impl<S, const N: usize, T> ParBatch<TestOperatorTag, S, N> for T where
   T: TestOperator<S, N>
 {
 }
@@ -88,7 +89,7 @@ where
 }
 
 impl<const N: usize, S, T> TestExecutor<S, N, ParallelEachExecutionStrategy>
-  for ParEach<TestOperatorTag, S, T>
+  for ParEachOperator<TestOperatorTag, S, T>
 where
   S: Sync,
   T: TestOperator<S, N> + Sync,
@@ -102,7 +103,7 @@ where
 }
 
 impl<const N: usize, S, T> TestExecutor<S, N, ParallelBatchExecutionStrategy>
-  for ParBatch<TestOperatorTag, S, T>
+  for ParBatchOperator<TestOperatorTag, S, T>
 where
   S: Sync,
   T: TestOperator<S, N> + Sync,
