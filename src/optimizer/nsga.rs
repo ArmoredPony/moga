@@ -1,5 +1,7 @@
 use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 
+use typed_builder::TypedBuilder;
+
 use super::Optimizer;
 use crate::{
   mutator::MutationExecutor,
@@ -10,6 +12,7 @@ use crate::{
   tester::TestExecutor,
 };
 
+#[derive(TypedBuilder)]
 pub struct Nsga2<
   Solution,
   Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
@@ -26,84 +29,28 @@ pub struct Nsga2<
   const PARENT_NUM: usize,
   const OFFSPRING_NUM: usize,
 > {
-  solutions: Vec<Solution>,
-  scores: Vec<Scores<OBJECTIVE_NUM>>,
-  initial_population_size: usize,
+  population: Vec<Solution>,
   tester: Tst,
   selector: Sel,
   recombinator: Rec,
   mutator: Mut,
   terminator: Ter,
+  #[builder(setter(skip), default = vec![])]
+  scores: Vec<Scores<OBJECTIVE_NUM>>,
+  #[builder(setter(skip), default = population.len())]
+  initial_population_size: usize,
+  #[builder(setter(skip), default)]
   _solution: PhantomData<Solution>,
+  #[builder(setter(skip), default)]
   _eva_es: PhantomData<TstExecStrat>,
+  #[builder(setter(skip), default)]
   _ter_es: PhantomData<TerExecStrat>,
+  #[builder(setter(skip), default)]
   _sel_es: PhantomData<SelExecStrat>,
+  #[builder(setter(skip), default)]
   _mut_es: PhantomData<MutExecStrat>,
+  #[builder(setter(skip), default)]
   _rec_es: PhantomData<RecExecStrat>,
-}
-
-impl<
-    Solution,
-    Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
-    Sel: SelectionExecutor<Solution, OBJECTIVE_NUM, SelExecStrat>,
-    Rec: RecombinationExecutor<Solution, PARENT_NUM, OFFSPRING_NUM, RecExecStrat>,
-    Mut: MutationExecutor<Solution, MutExecStrat>,
-    Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
-    TstExecStrat,
-    TerExecStrat,
-    SelExecStrat,
-    MutExecStrat,
-    RecExecStrat,
-    const OBJECTIVE_NUM: usize,
-    const PARENT_NUM: usize,
-    const OFFSPRING_NUM: usize,
-  >
-  Nsga2<
-    Solution,
-    Tst,
-    Sel,
-    Rec,
-    Mut,
-    Ter,
-    TstExecStrat,
-    TerExecStrat,
-    SelExecStrat,
-    MutExecStrat,
-    RecExecStrat,
-    OBJECTIVE_NUM,
-    PARENT_NUM,
-    OFFSPRING_NUM,
-  >
-{
-  pub fn new(
-    initial_population: Vec<Solution>,
-    tester: Tst,
-    terminator: Ter,
-    selector: Sel,
-    recombinator: Rec,
-    mutator: Mut,
-  ) -> Self {
-    assert!(
-      !initial_population.is_empty(),
-      "initial population cannot be empty"
-    );
-    Self {
-      initial_population_size: initial_population.len(),
-      solutions: initial_population,
-      scores: Vec::new(),
-      tester,
-      terminator,
-      selector,
-      recombinator,
-      mutator,
-      _solution: PhantomData,
-      _eva_es: PhantomData,
-      _ter_es: PhantomData,
-      _sel_es: PhantomData,
-      _mut_es: PhantomData,
-      _rec_es: PhantomData,
-    }
-  }
 }
 
 /// Index of solution in `solutions` vector.
@@ -152,54 +99,54 @@ impl<
     OFFSPRING_NUM,
   >
 {
-  fn peek_solutions(&self) -> &[Solution] {
-    &self.solutions
+  fn peek_population(&self) -> &[Solution] {
+    &self.population
   }
 
   fn peek_scores(&self) -> &[Scores<OBJECTIVE_NUM>] {
     &self.scores
   }
 
-  fn take_solutions(&mut self) -> Vec<Solution> {
-    std::mem::take(&mut self.solutions)
+  fn take_population(&mut self) -> Vec<Solution> {
+    std::mem::take(&mut self.population)
   }
 
   fn take_scores(&mut self) -> Vec<Scores<OBJECTIVE_NUM>> {
     std::mem::take(&mut self.scores)
   }
 
-  fn set_solutions(&mut self, solutions: Vec<Solution>) {
-    self.solutions = solutions;
+  fn set_population(&mut self, population: Vec<Solution>) {
+    self.population = population;
   }
 
   fn set_scores(&mut self, scores: Vec<Scores<OBJECTIVE_NUM>>) {
     self.scores = scores;
   }
 
-  fn test(&self, solutions: &[Solution]) -> Vec<Scores<OBJECTIVE_NUM>> {
-    self.tester.execute_tests(solutions)
+  fn test(&self, population: &[Solution]) -> Vec<Scores<OBJECTIVE_NUM>> {
+    self.tester.execute_tests(population)
   }
 
   fn select<'a>(
     &mut self,
-    solutions: &'a [Solution],
+    population: &'a [Solution],
     scores: &[Scores<OBJECTIVE_NUM>],
   ) -> Vec<&'a Solution> {
-    self.selector.execute_selection(solutions, scores)
+    self.selector.execute_selection(population, scores)
   }
 
-  fn create(&self, solutions: &[&Solution]) -> Vec<Solution> {
-    self.recombinator.execute_recombination(solutions)
+  fn create(&self, population: &[&Solution]) -> Vec<Solution> {
+    self.recombinator.execute_recombination(population)
   }
 
-  fn mutate(&self, solutions: &mut [Solution]) {
-    self.mutator.execute_mutations(solutions)
+  fn mutate(&self, population: &mut [Solution]) {
+    self.mutator.execute_mutations(population)
   }
 
   fn terminate(&mut self) -> bool {
     self
       .terminator
-      .execute_termination(&self.solutions, &self.scores)
+      .execute_termination(&self.population, &self.scores)
   }
 
   fn truncate(
