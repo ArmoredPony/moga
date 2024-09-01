@@ -129,11 +129,11 @@ where
   }
 }
 
-/// A `Terminator` that ignores solutions and terminates the algorithm as soon
-/// as a certain number of generations had passed.
-pub struct GenerationsTerminator(pub usize);
+/// A `Terminator` that terminates the algorithm as soon as a certain number of
+/// generations had passed.
+pub struct GenerationTerminator(pub usize);
 
-impl<S, const N: usize> Terminator<S, N> for GenerationsTerminator {
+impl<S, const N: usize> Terminator<S, N> for GenerationTerminator {
   fn terminate(&mut self, _: &[S], _: &[Scores<N>]) -> bool {
     match self.0 {
       0 => true,
