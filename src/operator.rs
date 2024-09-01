@@ -57,7 +57,8 @@ pub trait ParBatch<OperatorTag, S, const N: usize> {
   /// Creates a wrapper around given operator that marks it to
   /// be executed in parallel for each **batch** of solutions.
   /// The crate calculates the size of the batch in such a way as to evenly
-  /// distribute the calculations across all available threads.
+  /// distribute the calculations across all available threads. This is usually
+  /// faster than parallelization for each individual solution.
   ///
   /// **Parallelization is implemented with [rayon]. As a result, for simple
   /// functions, parallelization may only decrease performance because of
