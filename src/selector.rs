@@ -34,22 +34,14 @@ impl<S, const N: usize, L> IntoParOperator<SelectionOperatorTag, S, N> for L whe
 pub trait Selector<S, const N: usize> {
   /// Takes slices of solutions and their respective scores.
   /// Returns vector of references to selected solutions.
-  fn select<'a>(
-    &mut self,
-    solutions: &'a [S],
-    scores: &[Scores<N>],
-  ) -> Vec<&'a S>;
+  fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S>;
 }
 
 impl<S, const N: usize, F> Selector<S, N> for F
 where
   F: for<'a> Fn(&'a [S], &[Scores<N>]) -> Vec<&'a S>,
 {
-  fn select<'a>(
-    &mut self,
-    solutions: &'a [S],
-    scores: &[Scores<N>],
-  ) -> Vec<&'a S> {
+  fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S> {
     self(solutions, scores)
   }
 }
@@ -58,7 +50,7 @@ where
 // TODO: make private
 pub trait SelectionExecutor<S, const N: usize, ExecutionStrategy> {
   fn execute_selection<'a>(
-    &mut self,
+    &self,
     solutions: &'a [S],
     scores: &[Scores<N>],
   ) -> Vec<&'a S>;
@@ -70,7 +62,7 @@ where
   L: Selector<S, N>,
 {
   fn execute_selection<'a>(
-    &mut self,
+    &self,
     solutions: &'a [S],
     scores: &[Scores<N>],
   ) -> Vec<&'a S> {
@@ -84,7 +76,7 @@ where
   L: SelectionOperator<S, N>,
 {
   fn execute_selection<'a>(
-    &mut self,
+    &self,
     solutions: &'a [S],
     scores: &[Scores<N>],
   ) -> Vec<&'a S> {
@@ -104,7 +96,7 @@ where
   L: SelectionOperator<S, N> + Sync,
 {
   fn execute_selection<'a>(
-    &mut self,
+    &self,
     solutions: &'a [S],
     scores: &[Scores<N>],
   ) -> Vec<&'a S> {
@@ -124,7 +116,7 @@ where
   L: SelectionOperator<S, N> + Sync,
 {
   fn execute_selection<'a>(
-    &mut self,
+    &self,
     solutions: &'a [S],
     scores: &[Scores<N>],
   ) -> Vec<&'a S> {
@@ -146,7 +138,7 @@ where
 pub struct AllSelector();
 
 impl<const N: usize, S> Selector<S, N> for AllSelector {
-  fn select<'a>(&mut self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
+  fn select<'a>(&self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
     solutions.iter().collect()
   }
 }
@@ -156,18 +148,19 @@ impl<const N: usize, S> Selector<S, N> for AllSelector {
 pub struct FirstSelector(pub usize);
 
 impl<const N: usize, S> Selector<S, N> for FirstSelector {
-  fn select<'a>(&mut self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
+  fn select<'a>(&self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
     solutions.iter().take(self.0).collect()
   }
 }
 
-/// Selects `n` random solutions. You may provide any type that implements
-/// `Rng` trait from [rand] crate.
-pub struct RandomSelector<R: Rng>(pub usize, pub R);
+/// Selects `n` random solutions.
+pub struct RandomSelector(pub usize);
 
-impl<const N: usize, S, R: Rng> Selector<S, N> for RandomSelector<R> {
-  fn select<'a>(&mut self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
-    solutions.iter().choose_multiple(&mut self.1, self.0)
+impl<const N: usize, S> Selector<S, N> for RandomSelector {
+  fn select<'a>(&self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
+    solutions
+      .iter()
+      .choose_multiple(&mut rand::thread_rng(), self.0)
   }
 }
 
@@ -235,11 +228,7 @@ mod tests {
   fn test_custom_selectior() {
     struct CustomSelector {}
     impl<S, const N: usize> Selector<S, N> for CustomSelector {
-      fn select<'a>(
-        &mut self,
-        solutions: &'a [S],
-        _: &[Scores<N>],
-      ) -> Vec<&'a S> {
+      fn select<'a>(&self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
         solutions.iter().collect()
       }
     }
@@ -262,9 +251,7 @@ mod tests {
 
   #[test]
   fn test_random_selector() {
-    let mut selector = RandomSelector(10, rand::thread_rng());
-    takes_selector::<CustomExecutionStrategy, 0, RandomSelector<_>>(
-      &mut selector,
-    );
+    let mut selector = RandomSelector(10);
+    takes_selector::<CustomExecutionStrategy, 0, RandomSelector>(&mut selector);
   }
 }
