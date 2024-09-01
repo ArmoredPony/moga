@@ -1,10 +1,10 @@
-#![allow(unused_variables, unused_imports)]
-
-use std::{io::Write, path::Path};
+use std::{fs::File, io::Write, path::Path};
 
 use moga::{
+  operator::*,
   optimizer::{Nsga2, Optimizer},
   selector::RandomSelector,
+  terminator::GenerationTerminator,
 };
 use rand::{seq::IteratorRandom, Rng};
 use rand_distr::{Distribution, Normal};
@@ -20,25 +20,29 @@ fn main() {
   let f1 = |&(a, b): &S| 4.0 * a.powf(2.0) + 4.0 * b.powf(2.0);
   // and another objective function f2(x, y) = (x - 5)^2 + (y - 5)^2
   let f2 = |&(a, b): &S| (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0);
-  // let evaluator = [f1, f2];
 
-  // you can also create a closure that returns array
-  let evaluator = |&(a, b): &S| {
+  // array of closures forms a test
+  let test = [f1, f2];
+
+  // you can also create a test from a closure that returns array
+  // instead of using array of closures
+  /*
+  let test = |&(a, b): &S| {
     [
       4.0 * a.powf(2.0) + 4.0 * b.powf(2.0),
       (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0),
     ]
   };
+  */
 
-  // terminates after 100 generations
-  // let terminator = GenerationsTerminator(1000);
-  let terminator = |sol: &S, sc: &[f32; 2]| *sol == (5.0, 5.0);
+  // terminates after 1000 generations
+  let terminator = GenerationTerminator(1000);
 
   // selects 10 values randomly
-  let selector = RandomSelector(10, rand::thread_rng());
+  let selector = RandomSelector(10);
 
-  // SBX crossover for two floating point values
-  let f32_sbx = |a: f32, b: f32| -> S {
+  // SBX crossover for two `f32` type values
+  let sbx_crossover = |a: f32, b: f32| -> S {
     let n = 2.0;
     let r: f32 = rand::thread_rng().gen_range(0.0..1.0);
     let beta = if r <= 0.5 {
@@ -51,38 +55,49 @@ fn main() {
     (p, q)
   };
   // ...which is used on both solutions' values
-  let crossover = |(x1, y1): &S, (x2, y2): &S| -> (S, S) {
-    let (x3, x4) = f32_sbx(*x1, *x2);
-    let (y3, y4) = f32_sbx(*y1, *y2);
+  let recombination = |(x1, y1): &S, (x2, y2): &S| -> (S, S) {
+    let (x3, x4) = sbx_crossover(*x1, *x2);
+    let (y3, y4) = sbx_crossover(*y1, *y2);
     ((x3, y3), (x4, y4))
   };
 
   // mutator based on random values from normal disribution...
   let normal = Normal::new(0.0, 1.0).unwrap(); // which comes from 'rand_distr'
-  let mutator = |s: &mut S| {
+  let mutation = |s: &mut S| {
     s.0 += normal.sample(&mut rand::thread_rng());
     s.1 += normal.sample(&mut rand::thread_rng());
   };
 
-  let nsga = Nsga2::new(
-    population, evaluator, terminator, selector, crossover, mutator,
-  );
-  let solutions = nsga.optimize();
+  // incredibly useful builder implementation with compile time verification
+  // provided by 'typed-builder' crate
+  let nsga2 = Nsga2::builder()
+    .population(population)
+    // fitness values will be evaluated concurrently for each solution
+    .tester(test.par_each())
+    .selector(selector)
+    .recombinator(recombination)
+    // solutions will be split in batches of optimal size, then the mutation
+    // operator will be applied to solutions in each batch concurrently
+    .mutator(mutation.par_batch())
+    .terminator(terminator)
+    .build();
+
+  // consume and run the optimizer, returning the best solutions
+  let solutions = nsga2.optimize();
 
   // write solutions to file in examples/nsga2/binh_korn.csv
-  let _ =
-    std::fs::File::create(Path::new(file!()).with_file_name("binh_korn.csv"))
-      .unwrap()
-      .write_all(
-        solutions
-          .iter()
-          .map(|s| format!("{} {}", f1(s), f2(s)))
-          .collect::<Vec<_>>()
-          .join("\n")
-          .as_bytes(),
-      );
+  let _ = File::create(Path::new(file!()).with_file_name("binh_korn.csv"))
+    .unwrap()
+    .write_all(
+      solutions
+        .iter()
+        .map(|s| format!("{} {}", f1(s), f2(s)))
+        .collect::<Vec<_>>()
+        .join("\n")
+        .as_bytes(),
+    );
 
-  // and print first 10 solutions
+  // print 10 random solutions
   println!("   x   |   y   ");
   for (x, y) in solutions
     .into_iter()
