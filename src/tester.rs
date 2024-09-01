@@ -37,7 +37,7 @@ where
   }
 }
 
-impl<S, const N: usize, T> ParEach<TestOperatorTag, S, N> for T where
+impl<S, const N: usize, T> ParEach<TestOperatorTag, S, N, 0> for T where
   T: TestOperator<S, N>
 {
 }

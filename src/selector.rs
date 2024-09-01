@@ -20,7 +20,7 @@ where
   }
 }
 
-impl<S, const N: usize, L> ParEach<SelectionOperatorTag, S, N> for L where
+impl<S, const N: usize, L> ParEach<SelectionOperatorTag, S, N, 0> for L where
   L: SelectionOperator<S, N>
 {
 }

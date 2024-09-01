@@ -20,7 +20,7 @@ impl<OperatorTag, S, O> ParEachOperator<OperatorTag, S, O> {
   }
 }
 
-pub trait ParEach<OperatorTag, S, const N: usize> {
+pub trait ParEach<OperatorTag, S, const N: usize, const M: usize> {
   /// Creates a wrapper around given operator that marks it to
   /// be executed in parallel for **each** solution.
   ///

@@ -17,7 +17,7 @@ where
   }
 }
 
-impl<S, const N: usize, T> ParEach<TerminationOperatorTag, S, N> for T where
+impl<S, const N: usize, T> ParEach<TerminationOperatorTag, S, N, 0> for T where
   T: TerminationOperator<S, N>
 {
 }

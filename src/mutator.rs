@@ -17,7 +17,10 @@ where
   }
 }
 
-impl<S, M> ParEach<MutationOperatorTag, S, 0> for M where M: MutationOperator<S> {}
+impl<S, M> ParEach<MutationOperatorTag, S, 0, 0> for M where
+  M: MutationOperator<S>
+{
+}
 
 impl<S, M> ParBatch<MutationOperatorTag, S, 0> for M where M: MutationOperator<S>
 {}
