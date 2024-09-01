@@ -11,58 +11,45 @@ pub trait RecombinationOperator<S, const P: usize, const O: usize> {
   fn recombine(&self, parents: [&S; P]) -> [S; O];
 }
 
-impl<S, const P: usize, const O: usize, F> RecombinationOperator<S, P, O> for F
-where
-  F: Fn([&S; P]) -> [S; O],
-{
-  fn recombine(&self, parents: [&S; P]) -> [S; O] {
-    self(parents)
-  }
+macro_rules! recombination_operator_fn_impl {
+  (
+    ($par:ident $(, $pars:ident)*),
+    ($par_nam:ident $(, $par_nams:ident)*),
+    $par_cnt:expr,
+    ($off:ident $(, $offs:ident)*),
+    ($off_nam:ident $(, $off_nams:ident)*),
+    $off_cnt:expr
+  ) => {
+    #[allow(unused_parens)]
+    impl<$par, F> RecombinationOperator<$par, $par_cnt, $off_cnt> for F
+    where
+      F: Fn( &$par $(, &$pars)* ) -> ( $off $(, $offs)* ),
+    {
+      fn recombine(&self, parents: [&$par; $par_cnt]) -> [$off; $off_cnt] {
+        let ( $par_nam, $( $par_nams, )* ) = parents.into();
+        let ( $off_nam $(, $off_nams )* ) = self($par_nam $(, $par_nams)*);
+        [ $off_nam, $( $off_nams, )* ]
+      }
+    }
+  };
 }
 
-// impl<S, F> RecombinationOperator<S, 1, 1> for F
-// where
-//   F: Fn(&S) -> S,
-// {
-//   fn recombine(&self, solutions: [&S; 1]) -> [S; 1] {
-//     [self(solutions[0])]
-//   }
-// }
-
-// impl<S, F> RecombinationOperator<S, 2, 1> for F
-// where
-//   F: Fn(&S, &S) -> S,
-// {
-//   fn recombine(&self, solutions: &[&S]) -> Vec<S> {
-//     if solutions.is_empty() {
-//       return vec![];
-//     }
-//     (0..solutions.len() - 1)
-//       .flat_map(|i| {
-//         (i + 1..solutions.len()).map(move |j| (&solutions[i], &solutions[j]))
-//       })
-//       .map(|(a, b)| self(a, b))
-//       .collect()
-//   }
-// }
-
-// // tuple-to-array conversion can be implemented with a macro
-// impl<S, F> RecombinationOperator<S, 2, 2> for F
-// where
-//   F: Fn(&S, &S) -> (S, S),
-// {
-//   fn recombine(&self, solutions: &[&S]) -> Vec<S> {
-//     if solutions.is_empty() {
-//       return vec![];
-//     }
-//     (0..solutions.len() - 1)
-//       .flat_map(|i| {
-//         (i + 1..solutions.len()).map(move |j| (&solutions[i], &solutions[j]))
-//       })
-//       .flat_map(|(a, b)| <[S; 2]>::from(self(a, b)))
-//       .collect()
-//   }
-// }
+recombination_operator_fn_impl! {(S), (a), 1, (S), (m), 1} // disgusting stuff
+recombination_operator_fn_impl! {(S), (a), 1, (S, S), (m, n), 2}
+recombination_operator_fn_impl! {(S), (a), 1, (S, S, S), (m, n, o), 3}
+recombination_operator_fn_impl! {(S), (a), 1, (S, S, S, S), (m, n, o, p), 4}
+recombination_operator_fn_impl! {(S, S), (a, b), 2, (S), (m), 1}
+recombination_operator_fn_impl! {(S, S), (a, b), 2, (S, S), (m, n), 2}
+recombination_operator_fn_impl! {(S, S), (a, b), 2, (S, S, S), (m, n, o), 3}
+recombination_operator_fn_impl! {(S, S), (a, b), 2, (S, S, S, S), (m, n, o, p), 4}
+recombination_operator_fn_impl! {(S, S, S), (a, b, c), 3, (S), (m), 1}
+recombination_operator_fn_impl! {(S, S, S), (a, b, c), 3, (S, S), (m, n), 2}
+recombination_operator_fn_impl! {(S, S, S), (a, b, c), 3, (S, S, S), (m, n, o), 3}
+recombination_operator_fn_impl! {(S, S, S), (a, b, c), 3, (S, S, S, S), (m, n, o, p), 4}
+recombination_operator_fn_impl! {(S, S, S, S), (a, b, c, d), 4, (S), (m), 1}
+recombination_operator_fn_impl! {(S, S, S, S), (a, b, c, d), 4, (S, S), (m, n), 2}
+recombination_operator_fn_impl! {(S, S, S, S), (a, b, c, d), 4, (S, S, S), (m, n, o), 3}
+recombination_operator_fn_impl! {(S, S, S, S), (a, b, c, d), 4, (S, S, S, S), (m, n, o, p), 4}
 
 impl<S, R, const N: usize> ParEach<RecombinationOperatorTag, S, N> for R where
   R: RecombinationOperator<S, N, N> // does this even work?
@@ -70,7 +57,7 @@ impl<S, R, const N: usize> ParEach<RecombinationOperatorTag, S, N> for R where
 }
 
 /// Creates offsprings by recombining previously selected parents.
-trait Recombinator<S> {
+pub trait Recombinator<S> {
   /// Recombines given parents, returning a vector of newly created offsprings.
   fn recombine(&self, parents: &[&S]) -> Vec<S>;
 }
@@ -163,68 +150,4 @@ mod tests {
     _: &C,
   ) {
   }
-
-  // #[test]
-  // fn test_crossover_1_to_1() {
-  //   let c = |s: &Solution| s.to_owned() + 1.0;
-  //   as_crossover(&c);
-
-  //   let parents: Vec<_> = (0..100).map(Solution::from).collect();
-  //   let offsprings = c.recombine(&parents.iter().collect::<Vec<_>>());
-
-  //   assert_eq!(parents.len(), offsprings.len());
-  //   assert_eq!(c.recombine(&[]), &[]);
-  // }
-
-  // #[test]
-  // fn test_crossover_2_to_1() {
-  //   let c = |a: &Solution, b: &Solution| a + b;
-  //   as_crossover(&c);
-
-  //   let parents: Vec<_> = (0..100).map(Solution::from).collect();
-  //   let offsprings = c.recombine(&parents.iter().collect::<Vec<_>>());
-
-  //   assert_eq!(offsprings.len(), (0..parents.len()).sum());
-
-  //   assert_eq!(c.recombine(&[]), &[]);
-  //   assert_eq!(c.recombine(&[&1.0]), &[]);
-  //   assert_eq!(c.recombine(&[&1.0, &2.0]), &[3.0]);
-  // }
-
-  // #[test]
-  // fn test_crossover_2_to_2() {
-  //   let c = |a: &Solution, b: &Solution| (a + b, a - b);
-  //   as_crossover(&c);
-
-  //   let parents: Vec<_> = (0..100).map(Solution::from).collect();
-  //   let offsprings = c.recombine(&parents.iter().collect::<Vec<_>>());
-
-  //   assert_eq!(offsprings.len(), (0..parents.len()).sum::<usize>() * 2);
-
-  //   assert_eq!(c.recombine(&[]), &[]);
-  //   assert_eq!(c.recombine(&[&1.0]), &[]);
-  //   assert_eq!(c.recombine(&[&1.0, &2.0]), &[3.0, -1.0]);
-  // }
-
-  // #[test]
-  // fn test_crossover_n_to_m() {
-  //   let c = |solutions: &[&Solution]| {
-  //     solutions
-  //       .chunks_exact(2)
-  //       .map(|p| Solution::max(*p[0], *p[1]))
-  //       .collect::<Vec<_>>()
-  //   };
-  //   as_crossover(&c);
-
-  //   let parents: Vec<_> = (0..100).map(Solution::from).collect();
-  //   let offsprings = c.recombine(&parents.iter().collect::<Vec<_>>());
-
-  //   assert_eq!(offsprings.len(), parents.len() / 2);
-
-  //   assert_eq!(c.recombine(&[]), &[]);
-  //   assert_eq!(c.recombine(&[&1.0]), &[]);
-  //   assert_eq!(c.recombine(&[&1.0, &2.0]), &[2.0]);
-  //   assert_eq!(c.recombine(&[&1.0, &2.0, &3.0]), &[2.0]);
-  //   assert_eq!(c.recombine(&[&1.0, &2.0, &3.0, &4.0]), &[2.0, 4.0]);
-  // }
 }
