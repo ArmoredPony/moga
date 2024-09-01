@@ -17,7 +17,7 @@ pub trait Optimizer<Solution, const OBJECTIVE_NUM: usize>: Sized {
       let mut scores = self.take_scores();
 
       let selected_population = self.select(&population, &scores);
-      let mut created_population = self.create(&selected_population);
+      let mut created_population = self.create(selected_population);
       self.mutate(&mut created_population);
       let mut created_scores = self.test(&created_population);
 
@@ -63,7 +63,7 @@ pub trait Optimizer<Solution, const OBJECTIVE_NUM: usize>: Sized {
   ) -> Vec<&'a Solution>;
 
   /// Creates new population from selected solutions of previous population.
-  fn create(&self, population: &[&Solution]) -> Vec<Solution>;
+  fn create(&self, population: Vec<&Solution>) -> Vec<Solution>;
 
   /// Mutates population.
   fn mutate(&self, population: &mut [Solution]);

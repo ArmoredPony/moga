@@ -61,14 +61,14 @@ where
 /// Creates offsprings by recombining previously selected parents.
 pub trait Recombinator<S> {
   /// Recombines given parents, returning a vector of newly created offsprings.
-  fn recombine(&self, parents: &[&S]) -> Vec<S>;
+  fn recombine(&self, parents: Vec<&S>) -> Vec<S>;
 }
 
 impl<S, F> Recombinator<S> for F
 where
-  F: Fn(&[&S]) -> Vec<S>,
+  F: Fn(Vec<&S>) -> Vec<S>,
 {
-  fn recombine(&self, parents: &[&S]) -> Vec<S> {
+  fn recombine(&self, parents: Vec<&S>) -> Vec<S> {
     self(parents)
   }
 }
@@ -82,7 +82,7 @@ pub trait RecombinationExecutor<
   ExecutionStrategy,
 >
 {
-  fn execute_recombination(&self, parents: &[&S]) -> Vec<S>;
+  fn execute_recombination(&self, parents: Vec<&S>) -> Vec<S>;
 }
 
 impl<S, R>
@@ -95,7 +95,7 @@ impl<S, R>
 where
   R: Recombinator<S>,
 {
-  fn execute_recombination(&self, parents: &[&S]) -> Vec<S> {
+  fn execute_recombination(&self, parents: Vec<&S>) -> Vec<S> {
     self.recombine(parents)
   }
 }
@@ -105,7 +105,7 @@ impl<S, const P: usize, const O: usize, R>
 where
   R: RecombinationOperator<S, P, O>,
 {
-  fn execute_recombination(&self, parents: &[&S]) -> Vec<S> {
+  fn execute_recombination(&self, parents: Vec<&S>) -> Vec<S> {
     parents
       .iter()
       .copied()
@@ -127,7 +127,7 @@ where
   S: Sync + Send,
   R: RecombinationOperator<S, P, O> + Sync + Send,
 {
-  fn execute_recombination(&self, parents: &[&S]) -> Vec<S> {
+  fn execute_recombination(&self, parents: Vec<&S>) -> Vec<S> {
     parents
       .iter()
       .copied()
@@ -157,7 +157,7 @@ mod tests {
   >(
     r: &R,
   ) {
-    r.execute_recombination(&[]);
+    r.execute_recombination(vec![]);
   }
 
   #[test]
@@ -277,7 +277,7 @@ mod tests {
 
   #[test]
   fn test_recombinator_from_closure() {
-    let r = |_: &[&Solution]| vec![0.0, 1.0, 2.0, 3.0, 4.0];
+    let r = |_: Vec<&Solution>| vec![0.0, 1.0, 2.0, 3.0, 4.0];
     takes_recombinator(&r);
   }
 
@@ -298,8 +298,8 @@ mod tests {
   fn test_custom_recombinator() {
     struct CustomRecombinator {}
     impl<S: Copy> Recombinator<S> for CustomRecombinator {
-      fn recombine(&self, parents: &[&S]) -> Vec<S> {
-        parents.iter().copied().copied().collect()
+      fn recombine(&self, parents: Vec<&S>) -> Vec<S> {
+        parents.into_iter().copied().collect()
       }
     }
 

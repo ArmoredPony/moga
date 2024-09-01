@@ -135,7 +135,7 @@ impl<
     self.selector.execute_selection(population, scores)
   }
 
-  fn create(&self, population: &[&Solution]) -> Vec<Solution> {
+  fn create(&self, population: Vec<&Solution>) -> Vec<Solution> {
     self.recombinator.execute_recombination(population)
   }
 
