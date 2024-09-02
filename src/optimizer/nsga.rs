@@ -2,9 +2,9 @@ use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 
 use typed_builder::TypedBuilder;
 
-use super::Optimizer;
 use crate::{
   mutator::MutationExecutor,
+  optimizer::genetic_algorithm::GeneticAlgorithm,
   recombinator::RecombinationExecutor,
   score::{ParetoDominance, Scores},
   selector::SelectionExecutor,
@@ -81,7 +81,7 @@ impl<
     const OBJECTIVE_NUM: usize,
     const PARENT_NUM: usize,
     const OFFSPRING_NUM: usize,
-  > Optimizer<Solution, OBJECTIVE_NUM>
+  > GeneticAlgorithm<Solution, OBJECTIVE_NUM>
   for Nsga2<
     Solution,
     Tst,

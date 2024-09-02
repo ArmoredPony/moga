@@ -2,7 +2,7 @@ use std::{fs::File, io::Write, path::Path};
 
 use moga::{
   operator::*,
-  optimizer::{Nsga2, Optimizer},
+  optimizer::{nsga::Nsga2, Optimizer},
   selector::RandomSelector,
   terminator::GenerationTerminator,
 };
