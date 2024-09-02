@@ -1,3 +1,5 @@
+//! Common GA operators' utilities.
+
 use std::marker::PhantomData;
 
 pub(crate) mod tag {
@@ -7,6 +9,7 @@ pub(crate) mod tag {
   pub enum MutationOperatorTag {}
   pub enum TerminationOperatorTag {}
 }
+
 /// A wrapper around an operator that marks it to
 /// be executed in parallel for **each** solution by executor.
 pub struct ParEachOperator<OperatorTag, S, O> {
@@ -21,6 +24,10 @@ impl<OperatorTag, S, O> ParEachOperator<OperatorTag, S, O> {
   }
 }
 
+/// Used to tag an operator as parallelized for **each** solution.
+///
+/// This conversion is cheap and doesn't change operator's behavior. However,
+/// executors treat tagged operators differently.
 pub trait ParEach<OperatorTag, S, const N: usize, const M: usize> {
   /// Creates a wrapper around given operator that marks it to
   /// be executed in parallel for **each** solution.
@@ -49,11 +56,15 @@ pub struct ParBatchOperator<OperatorTag, S, O> {
 }
 
 impl<OperatorTag, S, O> ParBatchOperator<OperatorTag, S, O> {
-  pub fn operator(&self) -> &O {
+  pub(crate) fn operator(&self) -> &O {
     &self.operator
   }
 }
 
+/// Used to tag an operator as parallelized for each **batch** of solutions.
+///
+/// This conversion is cheap and doesn't change operator's behavior. However,
+/// executors treat tagged operators differently.
 pub trait ParBatch<OperatorTag, S, const N: usize> {
   /// Creates a wrapper around given operator that marks it to
   /// be executed in parallel for each **batch** of solutions.

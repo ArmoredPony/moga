@@ -1,3 +1,5 @@
+//! Implementations of genetic algorithms of NSGA family.
+
 use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 
 use typed_builder::TypedBuilder;
@@ -12,6 +14,13 @@ use crate::{
   tester::executor::TestExecutor,
 };
 
+/// An implementation of Non-Dominated Sorting Genetic Algorithm II ([NSGA-II]).
+///
+/// [NSGA-II]: https://cs.uwlax.edu/~dmathias/cs419/readings/NSGAIIElitistMultiobjectiveGA.pdf
+///
+/// # Examples
+///
+/// TODO: create an example as little as possible
 #[derive(TypedBuilder)]
 pub struct Nsga2<
   Solution,

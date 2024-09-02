@@ -1,3 +1,5 @@
+//! Fitness scores evaluation utilities.
+
 use executor::TestExecutor;
 use rayon::prelude::*;
 
@@ -13,12 +15,39 @@ use crate::{
   score::Scores,
 };
 
-/// Evaluates solution's fitness, calculating an array of scores.
-/// `test` call returns an array of `Scores`. If you want to test a solution
-/// against only one metric, wrap it in a single element array nonetheless.
-/// The target score of each objective in test is deemed to be 0.
+/// An operator that tests solution's fitness, evaluating an array of its
+/// fitness scores.
+///
+/// The target value of a score, which it converges at, is considered to be 0.
+/// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
+/// If it does not align with your actual goal values, ~~too bad~~ rewrite your
+/// objective functions so they **do** converge at 0.
+///
+/// This crate's purpose is *multi-objective* optimizations, that's why tests
+/// must return an *array* of values. If you want to return a single value,
+/// wrap it in an array nonetheless.
+///
+/// Can be applied in parallel to each solution or to batches of solutions
+/// by converting it into a parallelized operator with `par_each()` or
+/// `par_batch()` methods.
+///
+/// # Examples
+/// ```
+/// # use moga::operator::*;
+/// let t = |f: &f32| [f * 2.0]; // only one objective
+/// let t = |f: &f32| [f + 1.0, f + 2.0, f + 3.0]; // 3 objectives
+/// // or use an array of closures that return a single value
+/// let t = [
+///   |f: &f32| f + 1.0,
+///   |f: &f32| f * f + 2.0,
+///   |f: &f32| f * f * f + 3.0,
+/// ];
+/// t.par_batch();
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Test<S, const N: usize> {
-  /// Returns performance scores for given solution.
+  /// Returns an array of fitness scores for given solution.
   /// The closer a score is to 0 - the better.
   fn test(&self, solution: &S) -> Scores<N>;
 }
@@ -51,10 +80,28 @@ impl<S, const N: usize, T> ParBatch<TestOperatorTag, S, N> for T where
 {
 }
 
-/// Tests performance of each solution, calculating their scores.
-/// The target score of each objective in test is deemed to be 0.
+/// An operator that tests solutions' fitness, evaluating an array of fitness
+/// scores for each solution.
+///
+/// The target value of a score, which it converges at, is considered to be 0.
+/// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
+/// If it does not align with your actual goal values, ~~too bad~~ rewrite your
+/// objective functions so they **do** converge at 0.
+///
+/// This crate's purpose is *multi-objective* optimizations, that's why tests
+/// must return an *array* of values. If you want to return a single value,
+/// wrap it in an array nonetheless.
+///
+/// # Examples
+/// ```
+/// # use moga::operator::*;
+/// let t = |fs: &[f32]| fs.iter().map(|f| [f.log10(), f.sin()]).collect();
+/// # let _: Vec<_> = t(&[]);
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Tester<S, const N: usize> {
-  /// Returns a vector of performance scores for each solution.
+  /// Returns a vector of arrays of fitness scores for given solutions.
   /// The closer a score is to 0 - the better.
   fn test(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }
@@ -68,11 +115,13 @@ where
   }
 }
 
-// TODO: add docs
+/// This private module prevents exposing the `Executor` to a user.
 pub(crate) mod executor {
   use crate::score::Scores;
 
+  /// An internal test executor.
   pub trait TestExecutor<S, const N: usize, ExecutionStrategy> {
+    /// Executes tests optionally parallelizing operator's application.
     fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>>;
   }
 }
@@ -82,7 +131,13 @@ where
   E: Tester<S, N>,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
-    self.test(solutions)
+    let scores = self.test(solutions);
+    assert_eq!(
+      scores.len(),
+      solutions.len(),
+      "the number of calculated fitness scores doesn't match the number of solutions"
+    );
+    scores
   }
 }
 

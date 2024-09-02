@@ -1,3 +1,5 @@
+//! Termination utilities.
+
 use executor::TerminationExecutor;
 use rayon::prelude::*;
 
@@ -13,9 +15,23 @@ use crate::{
   score::Scores,
 };
 
-/// Optimizer termination condition.
+/// An operator that for each given solution decides whether the algorithm
+/// should be terminated or not.
+///
+/// Can be applied in parallel to each solution or to batches of solutions
+/// by converting it into a parallelized operator with `par_each()` or
+/// `par_batch()` methods.
+///
+/// # Examples
+/// ```ignore
+/// // stop if all fitness values are equal to zero or a solution became negative
+/// let t = |f: &f32, v: &[f32; 3]| *f < 0.0 || v == &[0.0, 0.0, 0.0];
+/// let t = t.par_batch();
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Termination<S, const N: usize> {
-  /// If returns `true`, optimizer's algorithm is terminated.
+  /// If returns `true`, the algorithm is terminated.
   fn terminate(&self, solution: &S, scores: &Scores<N>) -> bool;
 }
 
@@ -38,9 +54,17 @@ impl<S, const N: usize, T> ParBatch<TerminationOperatorTag, S, N> for T where
 {
 }
 
-/// Terminates optimizer's algorithm based on some termination condition.
+/// An operator that terminates the algorithm based on some termination
+/// condition.
+///
+/// # Examples
+/// ```
+/// let t = |fs: &[f32], _: &[[f32; 3]]| fs.iter().all(|f| *f < 1.0);
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Terminator<S, const N: usize> {
-  /// If returns `true`, optimizer's algorithm is terminated.
+  /// If returns `true`, the algorithm is terminated.
   fn terminate(&mut self, solutions: &[S], scores: &[Scores<N>]) -> bool;
 }
 
@@ -53,11 +77,14 @@ where
   }
 }
 
-// TODO: add docs
+/// This private module prevents exposing the `Executor` to a user.
 pub(crate) mod executor {
   use crate::score::Scores;
 
+  /// An internal termination executor.
   pub trait TerminationExecutor<S, const N: usize, ExecutionStrategy> {
+    /// Executes termination evaluation optionally parallelizing operator's
+    /// application.
     fn execute_termination(
       &mut self,
       solutions: &[S],
@@ -144,7 +171,7 @@ where
 }
 
 /// A `Terminator` that terminates the algorithm as soon as a certain number of
-/// generations had passed.
+/// generations have passed.
 pub struct GenerationTerminator(pub usize);
 
 impl<S, const N: usize> Terminator<S, N> for GenerationTerminator {
@@ -187,9 +214,8 @@ mod tests {
 
   #[test]
   fn test_terminatior_from_closure() {
-    let mut terminator = |solutions: &[Solution], scores: &[Scores<3>]| {
-      solutions.iter().any(|s| *s > 0.0) || scores.iter().any(|s| s[0] == 0.0)
-    };
+    let mut terminator =
+      |fs: &[f32], _: &[[f32; 3]]| fs.iter().all(|f| *f < 1.0);
     takes_terminator(&mut terminator);
   }
 

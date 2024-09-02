@@ -1,3 +1,5 @@
+//! Selection utilities.
+
 use executor::SelectionExecutor;
 use rand::prelude::*;
 use rayon::prelude::*;
@@ -14,8 +16,21 @@ use crate::{
   score::Scores,
 };
 
-/// Condition by which it is determined whether a solution will be selected as
-/// a parent for next population or not.
+/// An operator that decides whether a solution will be selected as a parent
+/// for the next generation of solutions or not. Selected solutions' references
+/// are passed into `Recombinator`.
+///
+/// Can be applied in parallel to each solution or to batches of solutions
+/// by converting it into a parallelized operator with `par_each()` or
+/// `par_batch()` methods.
+///
+/// # Examples
+/// ```ignore
+/// let s = |_: &f32, _: &[f32; 3]| true; // simply selects each solution
+/// let s = s.par_each();
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Selection<S, const N: usize> {
   /// If returns true, then given solution will be selected as a parent for
   /// next population.
@@ -40,11 +55,32 @@ impl<S, const N: usize, L> ParBatch<SelectionOperatorTag, S, N> for L where
 {
 }
 
-/// Selects solutions suitable for becoming parents for next
+/// An operator that selects solutions suitable for recombination into a new
 /// generation of solutions.
+///
+/// Due to the fact that [closure lifetime binders] are still unimplemented
+/// (and [it doesn't feel like] they are going to be implemented soon),
+/// `Selector`s in closure form are a pain to work with. In fact, you can only
+/// implement them using a `fn` function with a lifetime parameter:
+/// ```
+/// // selects all solutions for recombination
+/// fn selector<'a>(fs: &'a [f32], _: &[[f32; 3]]) -> Vec<&'a f32> {
+///   fs.iter().collect()
+/// }
+/// ```
+///
+/// To save you the trouble, this crate provides several `Selector`s
+/// implementations such as `AllSelector`, `RandomSelector`, etc. And if you
+/// want to create your own selector after all, consider implementing `Selector`
+/// trait.
+///
+/// **Note that you probably want to implement this trait instead of using closures.**
+///
+/// [closure lifetime binders]: https://rust-lang.github.io/rfcs/3216-closure-lifetime-binder.html
+/// [it doesn't feel like]: https://github.com/rust-lang/rust/issues/97362
 pub trait Selector<S, const N: usize> {
   /// Takes slices of solutions and their respective scores.
-  /// Returns vector of references to selected solutions.
+  /// Returns a vector of references to selected solutions.
   fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S>;
 }
 
@@ -57,11 +93,13 @@ where
   }
 }
 
-// TODO: add docs
+/// This private module prevents exposing the `Executor` to a user.
 pub(crate) mod executor {
   use crate::score::Scores;
 
+  /// An internal selecion executor.
   pub trait SelectionExecutor<S, const N: usize, ExecutionStrategy> {
+    /// Executes selection optionally parallelizing operator's application.
     fn execute_selection<'a>(
       &self,
       solutions: &'a [S],
@@ -186,16 +224,16 @@ mod tests {
 
   type Solution = f32;
 
-  fn takes_selector<ES, L: SelectionExecutor<Solution, 3, ES>>(l: &mut L) {
+  fn takes_selector<ES, L: SelectionExecutor<Solution, 3, ES>>(l: &L) {
     l.execute_selection(&[], &[]);
   }
 
   #[test]
   fn test_selection_from_closure() {
-    let mut selection = |_: &Solution, _: &Scores<3>| true;
-    takes_selector(&mut selection);
-    takes_selector(&mut selection.par_each());
-    takes_selector(&mut selection.par_batch());
+    let selection = |_: &Solution, _: &Scores<3>| true;
+    takes_selector(&selection);
+    takes_selector(&selection.par_each());
+    takes_selector(&selection.par_batch());
   }
 
   #[test]
@@ -206,11 +244,11 @@ mod tests {
     ) -> Vec<&'a Solution> {
       solutions.iter().collect()
     }
-    takes_selector(&mut &selector);
+    takes_selector(&selector);
   }
 
-  // will work once `#![feature(closure_lifetime_binder)]`
-  // is fucking stabilized already it's been two years since it's implemented
+  // will work once `#![feature(closure_lifetime_binder)]`is stabilized already
+  // it's been two years since it's implemented god damn it
 
   // #[test]
   // fn test_selector_from_closure() {
@@ -223,48 +261,49 @@ mod tests {
 
   #[test]
   fn test_custom_selection() {
+    #[derive(Clone, Copy)]
     struct CustomSelection {}
-    impl<S, const N: usize> Selection<S, N> for CustomSelection {
-      fn select(&self, _: &S, _: &Scores<N>) -> bool {
+    impl<S> Selection<S, 3> for CustomSelection {
+      fn select(&self, _: &S, _: &Scores<3>) -> bool {
         true
       }
     }
 
-    let mut selection = CustomSelection {};
-    takes_selector(&mut selection);
+    let selection = CustomSelection {};
+    takes_selector(&selection);
+    takes_selector(&selection.par_each());
+    takes_selector(&selection.par_batch());
   }
 
   #[test]
   fn test_custom_selectior() {
     #[derive(Clone, Copy)]
     struct CustomSelector {}
-    impl<S, const N: usize> Selector<S, N> for CustomSelector {
-      fn select<'a>(&self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
+    impl<S> Selector<S, 3> for CustomSelector {
+      fn select<'a>(&self, solutions: &'a [S], _: &[Scores<3>]) -> Vec<&'a S> {
         solutions.iter().collect()
       }
     }
 
-    let mut selector = CustomSelector {};
-    takes_selector(&mut selector);
-    takes_selector(&mut selector);
-    takes_selector(&mut selector);
+    let selector = CustomSelector {};
+    takes_selector(&selector);
   }
 
   #[test]
   fn test_all_selector() {
-    let mut selector = AllSelector();
-    takes_selector(&mut selector);
+    let selector = AllSelector();
+    takes_selector(&selector);
   }
 
   #[test]
   fn test_first_selector() {
-    let mut selector = FirstSelector(10);
-    takes_selector(&mut selector);
+    let selector = FirstSelector(10);
+    takes_selector(&selector);
   }
 
   #[test]
   fn test_random_selector() {
-    let mut selector = RandomSelector(10);
-    takes_selector(&mut selector);
+    let selector = RandomSelector(10);
+    takes_selector(&selector);
   }
 }

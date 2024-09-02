@@ -1,3 +1,5 @@
+//! Mutation utilities.
+
 use executor::MutationExecutor;
 use rayon::prelude::*;
 
@@ -12,9 +14,22 @@ use crate::{
   },
 };
 
-/// Mutates a solution.
+/// An operator that mutates a single solution.
+///
+/// Can be applied in parallel to each solution or to batches of solutions
+/// by converting it into a parallelized operator with `par_each()` or
+/// `par_batch()` methods.
+///
+/// # Examples
+/// ```
+/// # use moga::operator::*;
+/// let m = |f: &mut f32| *f *= 2.0;
+/// let m = m.par_batch();
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Mutation<S> {
-  /// Takes a solution and mutates it.
+  /// Mutates given solution.
   fn mutate(&self, solution: &mut S);
 }
 
@@ -31,7 +46,14 @@ impl<S, M> ParEach<MutationOperatorTag, S, 0, 0> for M where M: Mutation<S> {}
 
 impl<S, M> ParBatch<MutationOperatorTag, S, 0> for M where M: Mutation<S> {}
 
-/// Mutates solutions.
+/// An operator that mutates all solutions.
+///
+/// # Examples
+/// ```
+/// let m = |fs: &mut [f32]| fs.iter_mut().for_each(|f| *f *= 2.0);
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Mutator<S> {
   /// Mutates each solution in given solutions.
   fn mutate(&self, solutions: &mut [S]);
@@ -46,9 +68,11 @@ where
   }
 }
 
-// TODO: add docs
+/// This private module prevents exposing the `Executor` to a user.
 pub(crate) mod executor {
+  /// An internal mutation executor.
   pub trait MutationExecutor<S, ExecutionStrategy> {
+    /// Executes mutations optionally parallelizing operator's application.
     fn execute_mutations(&self, solutions: &mut [S]);
   }
 }
@@ -118,10 +142,9 @@ mod tests {
 
   #[test]
   fn test_mutator_from_closure() {
-    let mutation = |solution: &mut Solution| *solution *= 2.0;
-    takes_mutator(&mutation);
-    takes_mutator(&mutation.par_each());
-    takes_mutator(&mutation.par_batch());
+    let mutator =
+      |solutions: &mut [Solution]| solutions.iter_mut().for_each(|s| *s *= 2.0);
+    takes_mutator(&mutator);
   }
 
   #[test]

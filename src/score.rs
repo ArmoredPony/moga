@@ -1,10 +1,17 @@
+//! Type aliases for a more convenient representation of fitness scores.
+
 use std::cmp::Ordering;
 
-/// An alias for fitness score. The target value of a score is 0.
-pub(crate) type Score = f32;
+/// An alias for fitness score.
+///
+/// The target value of a score, which it converges at, is considered to be 0.
+/// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
+/// If it does not align with your actual goal values, ~~too bad~~ rewrite your
+/// objective functions so they **do** converge at 0.
+pub type Score = f32;
 
 /// An alias for array of `N` `Score` values.
-pub(crate) type Scores<const N: usize> = [Score; N];
+pub type Scores<const N: usize> = [Score; N];
 
 /// Describes pareto dominance for arrays of `Score`s.
 pub(crate) trait ParetoDominance {

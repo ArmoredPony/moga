@@ -1,3 +1,5 @@
+//! Recombination utilities.
+
 use executor::RecombinationExecutor;
 use itertools::Itertools;
 use rayon::prelude::*;
@@ -7,8 +9,33 @@ use crate::{
   operator::{tag::RecombinationOperatorTag, ParEach, ParEachOperator},
 };
 
-/// Creates new solutions from all possible unique parents' permutations of
-/// length `P`. Each permutation produces `O` offsprings.
+/// An operator that creates new solutions from all possible unique permutations
+/// of parents' references of length `P`. Each permutation produces `O`
+/// offsprings. Created offsprings are passed into `Mutator`.
+///
+/// For example, for a set of solutions `[a, b, c]` of type `S`, a
+/// `Recombination` `r` of type `Fn(&S, &S) -> S` will produce 3 values:
+/// `r(&a, &b)`, `r(&a, &c)` and `r(&b, &c)`.
+///
+/// Can be applied in parallel to each solution by converting it into a
+/// parallelized operator with `par_each()` method. `par_batch()` isn't
+/// supported for `Recombinator` ~~because I have no idea how to implement it
+/// efficently~~.
+///
+/// # Examples
+/// Any closure that take from 1 to 4 references to solutions and returns from
+/// 1 to 4 solutions is a `Recombinator`.
+/// ```
+/// # use moga::operator::*;
+/// let r = |a: &f32| a * -1.0; // 1 to 1
+/// let r = |a: &f32, b: &f32| (a + b) / 2.0; // 2 to 1
+/// let r = |a: &f32, b: &f32| (a + b, a - b); // 2 to 2
+/// let r = |a: &f32| (a + 1.0, a + 2.0, a + 3.0); // 1 to 3
+/// let r = |a: &f32, b: &f32, c: &f32, d: &f32| a + b - c - d; // 4 to 1 etc...
+/// let r = r.par_each();
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Recombination<S, const P: usize, const O: usize> {
   /// Takes references to a selected parents' combination of length `P`
   /// and returns `O` created offsprings.   
@@ -62,7 +89,20 @@ where
 {
 }
 
-/// Creates offsprings by recombining previously selected parents.
+/// An operator that recieves references to previously selected parents and
+/// recombinates them into a vector of offsprings. Created offsprings are passed
+/// into `Mutator`.
+///
+/// # Examples
+/// ```
+/// let r = |fs: Vec<&f32>| {
+///   fs.chunks(2)
+///     .map(|ch| (ch[0] + ch[1]) / 2.0)
+///     .collect::<Vec<f32>>()
+/// };
+/// ```
+///
+/// **Note that you always can implement this trait instead of using closures.**
 pub trait Recombinator<S> {
   /// Recombines given parents, returning a vector of newly created offsprings.
   fn recombine(&self, parents: Vec<&S>) -> Vec<S>;
@@ -77,8 +117,9 @@ where
   }
 }
 
-// TODO: add docs
+/// This private module prevents exposing the `Executor` to a user.
 pub(crate) mod executor {
+  /// An internal recombination executor.
   pub trait RecombinationExecutor<
     S,
     const P: usize,
@@ -86,6 +127,7 @@ pub(crate) mod executor {
     ExecutionStrategy,
   >
   {
+    /// Executes recombinations optionally parallelizing operator's application.
     fn execute_recombination(&self, parents: Vec<&S>) -> Vec<S>;
   }
 }
@@ -152,7 +194,7 @@ where
 mod tests {
   use super::*;
 
-  type Solution = f64;
+  type Solution = f32;
 
   fn takes_recombination_executor<
     const P: usize,
@@ -296,7 +338,8 @@ mod tests {
     }
 
     let recombination = CustomRecombination {};
-    takes_recombination_executor(&recombination)
+    takes_recombination_executor(&recombination);
+    takes_recombination_executor(&recombination.par_each());
   }
 
   #[test]

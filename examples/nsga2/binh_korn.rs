@@ -1,3 +1,4 @@
+#![allow(unused_variables)]
 use std::{fs::File, io::Write, path::Path};
 
 use moga::{
@@ -21,28 +22,26 @@ fn main() {
   // and another objective function f2(x, y) = (x - 5)^2 + (y - 5)^2
   let f2 = |&(a, b): &S| (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0);
 
-  // array of closures forms a test
+  // array of closures forms a `Test`
   let test = [f1, f2];
 
-  // you can also create a test from a closure that returns array
+  // you can also create a `Test` from a closure that returns an array
   // instead of using array of closures
-  /*
   let test = |&(a, b): &S| {
     [
       4.0 * a.powf(2.0) + 4.0 * b.powf(2.0),
       (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0),
     ]
   };
-  */
 
-  // terminates after 1000 generations
+  // a `Terminator` that terminates after 1000 generations
   let terminator = GenerationTerminator(1000);
 
-  // selects 10 values randomly
+  // a `Selector` that selects 10 values randomly
   let selector = RandomSelector(10);
 
-  // SBX crossover for two `f32` type values
-  let sbx_crossover = |a: f32, b: f32| -> S {
+  // simulated binary crossover for two `f32` values...
+  let sbx_f32 = |a: f32, b: f32| -> S {
     let n = 2.0;
     let r: f32 = rand::thread_rng().gen_range(0.0..1.0);
     let beta = if r <= 0.5 {
@@ -54,14 +53,14 @@ fn main() {
     let q = 0.5 * ((a + b) + beta * (b - a));
     (p, q)
   };
-  // ...which is used on both solutions' values
+  // which is applied to both solutions' values by `Recombination` operator
   let recombination = |(x1, y1): &S, (x2, y2): &S| -> (S, S) {
-    let (x3, x4) = sbx_crossover(*x1, *x2);
-    let (y3, y4) = sbx_crossover(*y1, *y2);
+    let (x3, x4) = sbx_f32(*x1, *x2);
+    let (y3, y4) = sbx_f32(*y1, *y2);
     ((x3, y3), (x4, y4))
   };
 
-  // mutator based on random values from normal disribution...
+  // a `Mutator` based on random values from normal disribution...
   let normal = Normal::new(0.0, 1.0).unwrap(); // which comes from 'rand_distr'
   let mutation = |s: &mut S| {
     s.0 += normal.sample(&mut rand::thread_rng());
