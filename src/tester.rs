@@ -1,6 +1,17 @@
+use executor::TestExecutor;
 use rayon::prelude::*;
 
-use crate::{execution::*, operator::*, score::Scores};
+use crate::{
+  execution::strategy::*,
+  operator::{
+    tag::TestOperatorTag,
+    ParBatch,
+    ParBatchOperator,
+    ParEach,
+    ParEachOperator,
+  },
+  score::Scores,
+};
 
 /// Evaluates solution's fitness, calculating an array of scores.
 /// `test` call returns an array of `Scores`. If you want to test a solution
@@ -58,9 +69,12 @@ where
 }
 
 // TODO: add docs
-// TODO: make private
-pub trait TestExecutor<S, const N: usize, ExecutionStrategy> {
-  fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>>;
+pub(crate) mod executor {
+  use crate::score::Scores;
+
+  pub trait TestExecutor<S, const N: usize, ExecutionStrategy> {
+    fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>>;
+  }
 }
 
 impl<S, const N: usize, E> TestExecutor<S, N, CustomExecutionStrategy> for E

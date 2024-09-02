@@ -1,7 +1,18 @@
+use executor::SelectionExecutor;
 use rand::prelude::*;
 use rayon::prelude::*;
 
-use crate::{execution::*, operator::*, score::Scores};
+use crate::{
+  execution::strategy::*,
+  operator::{
+    tag::SelectionOperatorTag,
+    ParBatch,
+    ParBatchOperator,
+    ParEach,
+    ParEachOperator,
+  },
+  score::Scores,
+};
 
 /// Condition by which it is determined whether a solution will be selected as
 /// a parent for next population or not.
@@ -29,7 +40,7 @@ impl<S, const N: usize, L> ParBatch<SelectionOperatorTag, S, N> for L where
 {
 }
 
-/// Performs selection of suitable solutions to become parents for next
+/// Selects solutions suitable for becoming parents for next
 /// generation of solutions.
 pub trait Selector<S, const N: usize> {
   /// Takes slices of solutions and their respective scores.
@@ -47,13 +58,16 @@ where
 }
 
 // TODO: add docs
-// TODO: make private
-pub trait SelectionExecutor<S, const N: usize, ExecutionStrategy> {
-  fn execute_selection<'a>(
-    &self,
-    solutions: &'a [S],
-    scores: &[Scores<N>],
-  ) -> Vec<&'a S>;
+pub(crate) mod executor {
+  use crate::score::Scores;
+
+  pub trait SelectionExecutor<S, const N: usize, ExecutionStrategy> {
+    fn execute_selection<'a>(
+      &self,
+      solutions: &'a [S],
+      scores: &[Scores<N>],
+    ) -> Vec<&'a S>;
+  }
 }
 
 impl<S, const N: usize, L> SelectionExecutor<S, N, CustomExecutionStrategy>

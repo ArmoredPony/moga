@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 
-// An alias for objective score. The target value of a score is 0.
-pub type Score = f32;
+/// An alias for fitness score. The target value of a score is 0.
+pub(crate) type Score = f32;
 
 /// An alias for array of `N` `Score` values.
-pub type Scores<const N: usize> = [Score; N];
+pub(crate) type Scores<const N: usize> = [Score; N];
 
 /// Describes pareto dominance for arrays of `Score`s.
 pub(crate) trait ParetoDominance {

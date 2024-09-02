@@ -1,6 +1,17 @@
+use executor::TerminationExecutor;
 use rayon::prelude::*;
 
-use crate::{execution::*, operator::*, score::Scores};
+use crate::{
+  execution::strategy::*,
+  operator::{
+    tag::TerminationOperatorTag,
+    ParBatch,
+    ParBatchOperator,
+    ParEach,
+    ParEachOperator,
+  },
+  score::Scores,
+};
 
 /// Optimizer termination condition.
 pub trait Termination<S, const N: usize> {
@@ -43,13 +54,16 @@ where
 }
 
 // TODO: add docs
-// TODO: make private
-pub trait TerminationExecutor<S, const N: usize, ExecutionStrategy> {
-  fn execute_termination(
-    &mut self,
-    solutions: &[S],
-    scores: &[Scores<N>],
-  ) -> bool;
+pub(crate) mod executor {
+  use crate::score::Scores;
+
+  pub trait TerminationExecutor<S, const N: usize, ExecutionStrategy> {
+    fn execute_termination(
+      &mut self,
+      solutions: &[S],
+      scores: &[Scores<N>],
+    ) -> bool;
+  }
 }
 
 impl<S, const N: usize, T> TerminationExecutor<S, N, CustomExecutionStrategy>

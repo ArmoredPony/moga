@@ -1,11 +1,12 @@
 use std::marker::PhantomData;
 
-pub enum TestOperatorTag {}
-pub enum SelectionOperatorTag {}
-pub enum RecombinationOperatorTag {}
-pub enum MutationOperatorTag {}
-pub enum TerminationOperatorTag {}
-
+pub(crate) mod tag {
+  pub enum TestOperatorTag {}
+  pub enum SelectionOperatorTag {}
+  pub enum RecombinationOperatorTag {}
+  pub enum MutationOperatorTag {}
+  pub enum TerminationOperatorTag {}
+}
 /// A wrapper around an operator that marks it to
 /// be executed in parallel for **each** solution by executor.
 pub struct ParEachOperator<OperatorTag, S, O> {
@@ -15,7 +16,7 @@ pub struct ParEachOperator<OperatorTag, S, O> {
 }
 
 impl<OperatorTag, S, O> ParEachOperator<OperatorTag, S, O> {
-  pub fn operator(&self) -> &O {
+  pub(crate) fn operator(&self) -> &O {
     &self.operator
   }
 }

@@ -3,13 +3,13 @@ use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 use typed_builder::TypedBuilder;
 
 use crate::{
-  mutator::MutationExecutor,
+  mutator::executor::MutationExecutor,
   optimizer::genetic_algorithm::GeneticAlgorithm,
-  recombinator::RecombinationExecutor,
+  recombinator::executor::RecombinationExecutor,
   score::{ParetoDominance, Scores},
-  selector::SelectionExecutor,
-  terminator::TerminationExecutor,
-  tester::TestExecutor,
+  selector::executor::SelectionExecutor,
+  terminator::executor::TerminationExecutor,
+  tester::executor::TestExecutor,
 };
 
 #[derive(TypedBuilder)]

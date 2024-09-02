@@ -1,6 +1,16 @@
+use executor::MutationExecutor;
 use rayon::prelude::*;
 
-use crate::{execution::*, operator::*};
+use crate::{
+  execution::strategy::*,
+  operator::{
+    tag::MutationOperatorTag,
+    ParBatch,
+    ParBatchOperator,
+    ParEach,
+    ParEachOperator,
+  },
+};
 
 /// Mutates a solution.
 pub trait Mutation<S> {
@@ -37,9 +47,10 @@ where
 }
 
 // TODO: add docs
-// TODO: make private
-pub trait MutationExecutor<S, ExecutionStrategy> {
-  fn execute_mutations(&self, solutions: &mut [S]);
+pub(crate) mod executor {
+  pub trait MutationExecutor<S, ExecutionStrategy> {
+    fn execute_mutations(&self, solutions: &mut [S]);
+  }
 }
 
 impl<S, M> MutationExecutor<S, CustomExecutionStrategy> for M

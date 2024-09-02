@@ -1,12 +1,16 @@
+use executor::RecombinationExecutor;
 use itertools::Itertools;
 use rayon::prelude::*;
 
-use crate::{execution::*, operator::*};
+use crate::{
+  execution::strategy::*,
+  operator::{tag::RecombinationOperatorTag, ParEach, ParEachOperator},
+};
 
-/// Creates new solutions by all possible unique parents' permutations of
+/// Creates new solutions from all possible unique parents' permutations of
 /// length `P`. Each permutation produces `O` offsprings.
 pub trait Recombination<S, const P: usize, const O: usize> {
-  /// Takes references to a selected parents's combination of length `P`
+  /// Takes references to a selected parents' combination of length `P`
   /// and returns `O` created offsprings.   
   fn recombine(&self, parents: [&S; P]) -> [S; O];
 }
@@ -74,15 +78,16 @@ where
 }
 
 // TODO: add docs
-// TODO: make private
-pub trait RecombinationExecutor<
-  S,
-  const P: usize,
-  const O: usize,
-  ExecutionStrategy,
->
-{
-  fn execute_recombination(&self, parents: Vec<&S>) -> Vec<S>;
+pub(crate) mod executor {
+  pub trait RecombinationExecutor<
+    S,
+    const P: usize,
+    const O: usize,
+    ExecutionStrategy,
+  >
+  {
+    fn execute_recombination(&self, parents: Vec<&S>) -> Vec<S>;
+  }
 }
 
 impl<S, R>
