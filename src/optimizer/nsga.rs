@@ -14,13 +14,50 @@ use crate::{
   testing::executor::TestExecutor,
 };
 
-/// An implementation of Non-Dominated Sorting Genetic Algorithm II ([NSGA-II]).
+/// An implementation of a fast and elitist multiobjective genetic algorithm:
+/// [NSGA-II].
 ///
 /// [NSGA-II]: https://cs.uwlax.edu/~dmathias/cs419/readings/NSGAIIElitistMultiobjectiveGA.pdf
 ///
 /// # Examples
-///
-/// TODO: create an example as little as possible
+/// *Schaffer's Problem No.1* solution.
+/// ```no_run
+/// # use rand::{seq::IteratorRandom, Rng};
+/// # use moga::{
+/// #  optimizer::nsga::Nsga2,
+/// #  selection::RandomSelector,
+/// #  termination::GenerationTerminator,
+/// #  Optimizer,
+/// #  ParBatch,
+/// # };
+/// # fn main() {
+/// // initial solutions lie between 0 and 100
+/// let population = (0..100).map(|i| i as f32).collect::<Vec<_>>();
+/// // objective functions `f1(x) = x^2` and `f2(x) = (x - 2)^2`
+/// let test = |x: &f32| [x.powf(2.0), (x - 2.0).powf(2.0)];
+/// // select 10 random solutions
+/// let selector = RandomSelector(10);
+/// // for each pair of parents `x` and `y` create an offspring `o = x + r * (y - x)`
+/// // where `r` is a random value between -1 and 2
+/// let recombinator = |x: &f32, y: &f32| x + rand::thread_rng().gen_range(-1.0..2.0) * (y - x);
+/// // don't mutate solutions
+/// let mutation = |_: &mut f32| {};
+/// // terminate after 100 generations
+/// let terminator = GenerationTerminator(100);
+/// // a convinient builder with compile time verification from `typed-builder` crate
+/// let optimizer = Nsga2::builder()
+///   .population(population)
+///   // `test` will be executed concurrently for each batch of solutions
+///   .tester(test.par_batch())
+///   .selector(selector)
+///   .recombinator(recombinator)
+///   .mutator(mutation)
+///   .terminator(terminator)
+///   .build();
+/// // upon termination the optimizer returns the best solutions it has found
+/// let solutions = optimizer.optimize();
+/// # }
+/// ```
 #[derive(TypedBuilder)]
 pub struct Nsga2<
   Solution,

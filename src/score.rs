@@ -1,8 +1,9 @@
-//! Type aliases for a more convenient representation of fitness scores.
+//! Type aliases for a more convenient representation of fitness scores used
+//! throughout the library.
 
 use std::cmp::Ordering;
 
-/// An alias for fitness score used by the crate.
+/// An alias for a fitness score.
 ///
 /// The target value of a score, which it converges at, is considered to be 0.
 /// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
@@ -10,7 +11,7 @@ use std::cmp::Ordering;
 /// objective functions so they **do** converge at 0.
 pub type Score = f32;
 
-/// An alias for array of `N` `Score` values.
+/// An alias for an array of `N` values of `Score` type.
 pub type Scores<const N: usize> = [Score; N];
 
 /// Describes pareto dominance for arrays of `Score`s.

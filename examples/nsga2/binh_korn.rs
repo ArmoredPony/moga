@@ -1,3 +1,5 @@
+//! Binh and Korn problem solution using NSGA-II.
+
 #![allow(unused_variables)]
 use std::{fs::File, io::Write, path::Path};
 
@@ -69,8 +71,7 @@ fn main() {
     s.1 += normal.sample(&mut rand::thread_rng());
   };
 
-  // incredibly useful builder implementation with compile time verification
-  // provided by 'typed-builder' crate
+  // a convinient builder with compile time verification from `typed-builder` crate
   let nsga2 = Nsga2::builder()
     .population(population)
     // fitness values will be evaluated concurrently for each solution

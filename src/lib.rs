@@ -94,43 +94,80 @@
 //!
 //! # Example
 //!
-//! Below lies a solution for the textbook "Binh and Korn function optimization"
+//! Below lies a solution for the textbook *Schaffer's Problem No.1*. This
+//! solution is oversimplified and very suboptimal, but it demonstrates the
+//! framework's workflow and manages to find pareto optimal solutions for that
 //! problem.
-//!
+//! ```no_run
+//! # use rand::{seq::IteratorRandom, Rng};
+//! # use moga::{
+//! #  optimizer::nsga::Nsga2,
+//! #  selection::RandomSelector,
+//! #  termination::GenerationTerminator,
+//! #  Optimizer,
+//! #  ParBatch,
+//! # };
+//! # fn main() {
+//! // initial solutions lie between 0 and 100
+//! let population = (0..100).map(|i| i as f32).collect::<Vec<_>>();
+//! // objective functions `f1(x) = x^2` and `f2(x) = (x - 2)^2`
+//! let test = |x: &f32| [x.powf(2.0), (x - 2.0).powf(2.0)];
+//! // select 10 random solutions
+//! let selector = RandomSelector(10);
+//! // for each pair of parents `x` and `y` create an offspring `o = x + r * (y - x)`
+//! // where `r` is a random value between -1 and 2
+//! let recombinator = |x: &f32, y: &f32| x + rand::thread_rng().gen_range(-1.0..2.0) * (y - x);
+//! // don't mutate solutions
+//! let mutation = |_: &mut f32| {};
+//! // terminate after 100 generations
+//! let terminator = GenerationTerminator(100);
+//! // a convinient builder with compile time verification from `typed-builder` crate
+//! let optimizer = Nsga2::builder()
+//!   .population(population)
+//!   // `test` will be executed concurrently for each batch of solutions
+//!   .tester(test.par_batch())
+//!   .selector(selector)
+//!   .recombinator(recombinator)
+//!   .mutator(mutation)
+//!   .terminator(terminator)
+//!   .build();
+//! // upon termination the optimizer returns the best solutions it has found
+//! let solutions = optimizer.optimize();
+//! # }
 //! ```
-//! // TODO: copy example from nsga2
-//! ```
 //!
-//! You can find more examples in the *examples* folder. You can also write your
-//! own and contribute it to the crate. I'd be very grateful! Here is a list of
-//! functions that one day I hope to cover:
+//! You can find more examples in the *examples* folder in the root of the
+//! project. You can also write your  own and contribute it to the crate. I'd
+//! be very grateful! Here is a list of functions that one day I hope to cover:
 //! <https://en.wikipedia.org/wiki/Test_functions_for_optimization>
 //!
 //! # Common pitfalls
 //!
 //! - Closures are great and handy to use until they aren't. A subtle mistake
 //!   can paint your code red and the error will appear far away from where it
-//!   actually happened. And since Rust does not allow you to annotate your
+//!   actually happened. Since Rust does not allow you to annotate your
 //!   variables with traits, just keep a sharp eye on your closures or just
-//!   implpement traits instead.  
-//!   Also [`Selection`] and [`Termination`] are implemented for the same
-//!   closure of type `Fn(&S, &[f32; N]) -> bool` which may confuse the compiler
-//!   (and you) from time to time. So move closures into an optimizer as soon as
-//!   possible, or, again, implement those traits for your own type.
+//!   implement traits for your own types instead.
+//!
+//! - [`Selection`] and [`Termination`] are implemented for the same closure of
+//!   type `Fn(&S, &[f32; N]) -> bool` which may confuse the compiler (and you)
+//!   from time to time. Move closures into an optimizer as soon as possible,
+//!   or, again, implement those traits for your own type.
 //!
 //! - More often than not parallelization only decreases performance of the
 //!   algorithm. Currently Rust does not provide any benchmarking utilities
-//!   "out-of-the-box" but you can use the tools that your OS provides you, like
-//!   [time](https://www.man7.org/linux/man-pages/man1/time.1.html) on Linux or
-//!   [Measure-Command](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/measure-command)
-//!   in PowerShell on Windows. Make the number of generations low and test it.
+//!   "out-of-the-box" but you can use the tools that your OS has, like
+//!   [time] on Linux or [Measure-Command] in PowerShell on Windows. Make the
+//!   number of generations low and test it.
 //!
 //! - Types may be hard to keep track of. For example, your solution candidate
 //!   can be of type (f32, f32) and if you optimize for two objectives then
 //!   you will have signatures like `|_: &[(f32, f32)], _: &[[f32, f32]]|` which
 //!   lead to hard-to-catch errors once you mix up something.
-//!   To avoid this, use type aliases. This crate itself uses them - look at the
-//!   [`score`] module.
+//!   This also applies to the number of objectives: if your `test` function
+//!   produces 2 values but `selector` expects 3, then you'll get a compile-time
+//!   error. To avoid this, use [type aliases]. This crate itself uses aliases
+//!   defined in [`score`] module. And you can too.
 //!
 //! # Use cases
 //!
@@ -154,6 +191,9 @@
 //! [`par_each()`]: crate::operator::ParEach::par_each
 //! [`par_batch()`]: crate::operator::ParBatch::par_batch
 //! [`score`]: crate::score
+//! [time]: https://www.man7.org/linux/man-pages/man1/time.1.html
+//! [Measure-Command]: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/measure-command
+//! [type aliases]: https://doc.rust-lang.org/reference/items/type-aliases.html
 
 #![warn(missing_docs)]
 
@@ -167,6 +207,8 @@ pub mod selection;
 pub mod termination;
 pub mod testing;
 
+// common operators and traits are re-exported by the create. the less common
+// ones, along with optimizer implementations, must be explicitly imported.
 pub use self::{
   mutation::{Mutation, Mutator},
   operator::{ParBatch, ParBatchOperator, ParEach, ParEachOperator},
