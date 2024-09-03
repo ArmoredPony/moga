@@ -1,4 +1,4 @@
-//! Abstract optimizers.
+//! Abstract optimizer.
 
 mod genetic_algorithm;
 pub mod nsga;
