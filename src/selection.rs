@@ -14,6 +14,7 @@ use crate::{
     ParEachOperator,
   },
   score::Scores,
+  Score,
 };
 
 /// An operator that decides whether a solution will be selected as a parent
@@ -216,7 +217,53 @@ impl<const N: usize, S> Selector<S, N> for RandomSelector {
   }
 }
 
-// TODO: add more selectors
+/// Selects `n` solutions with smallest sum of fitness scores.
+pub struct BestSelector(pub usize);
+
+impl<const N: usize, S> Selector<S, N> for BestSelector {
+  fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S> {
+    if solutions.len() <= self.0 {
+      return solutions.iter().collect();
+    }
+    let mut sol_sc = solutions
+      .iter()
+      .zip(
+        scores
+          .iter()
+          .map(|sc| sc.map(Score::abs).iter().sum::<Score>()),
+      )
+      .collect::<Vec<_>>();
+    sol_sc.sort_by(|a, b| a.1.partial_cmp(&b.1).expect("NaN encountered"));
+    sol_sc.into_iter().take(self.0).map(|s| s.0).collect()
+  }
+}
+
+/// Splits solutions into chunks of size `n` and selects the best solution from
+/// each chunk.
+pub struct TournamentSelector(pub usize);
+
+impl<const N: usize, S> Selector<S, N> for TournamentSelector {
+  fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S> {
+    let mut sol_sc = solutions
+      .iter()
+      .zip(
+        scores
+          .iter()
+          .map(|sc| sc.map(Score::abs).iter().sum::<Score>()),
+      )
+      .collect::<Vec<_>>();
+    sol_sc.shuffle(&mut rand::thread_rng());
+    sol_sc
+      .chunks(self.0)
+      .filter_map(|chunk| {
+        chunk
+          .iter()
+          .min_by(|a, b| a.1.partial_cmp(&b.1).expect("NaN encoutnered"))
+          .map(|ch| ch.0)
+      })
+      .collect()
+  }
+}
 
 #[cfg(test)]
 mod tests {
