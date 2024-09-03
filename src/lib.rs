@@ -32,8 +32,8 @@
 //! # Operators and Executors
 //!
 //! Abstractions, that perform each step, are called **operators**. For each
-//! **operator**, this crate provides an **executor** - another abstraction,
-//! that controls application of each operator to solutions and scores.
+//! **operator**, this crate provides an **executor** - crate's internal
+//! abstraction, that controls application of each operator to solutions and scores.
 //!
 //! Each **operator** is represented with two traits. One of them operates on
 //! whole arrays of solutions and their fitness values, another is applied to
@@ -50,15 +50,15 @@
 //!
 //! Each pair of operators implements its **executor**. For example, you can use
 //! [`Mutation`] instead of [`Mutator`] - **executor** will simply apply given
-//! [`Mutation`] to each solution, just like [`Mutator`] would.
+//! [`Mutation`] to each solution. Only [`Recombination`]s are a bit different:
+//! they are applied to each *combination* of solutions.
 //!
 //! This crate does not provide the common crossover or mutation functions you'd
 //! expect to see in a usual GA focused crate. The reason for this is that the
 //! crate was developed to mainly operate not on numbers, but on structs or
-//! *sets* of objects of unknown type. The crate does, however, provide you with
-//! a few [Selectors](crate::selector#structs) and one commonly used
-//! [`GenerationTerminator`](crate::terminator::GenerationTerminator) for a good
-//! measure.
+//! *sets* of objects of unknown type. The crate does, however, provide a few
+//! [selectors](crate::selection#structs) and one commonly used
+//! [`GenerationTerminator`] for good measure.
 //!
 //! # Closures
 //!
@@ -66,7 +66,7 @@
 //! takes a solution of type `S` and returns an array of `f32` values - one
 //! value per objective. Thus, instead of implementing [`Test`] you could use
 //! a closure of type `Fn(&S) -> [f32; N]`. Consult operators' documentation
-//! to see what closures implement these traits.
+//! to see what closures implement which traits.
 //!
 //! Note, however, that this highly generic implementation leads to unreadable
 //! compile time error messages that appear not during closure definition, but
@@ -79,9 +79,9 @@
 //! The **operators** from the 3rd column of the table above can be easily
 //! parallelized by calling [`par_each()`] or [`par_batch()`] methods on them
 //! (the latter isn't implemented for [`Recombination`]). This cheap conversion
-//! only wraps a closure into a struct, tagging it so an **executor** will apply
-//! such operator in parallel for each solution/score or to their batches of
-//! equal size. And you can call these methods on closures too:
+//! only wraps the **operator** into a struct, tagging it so an **executor**
+//! will apply such **operator** in parallel for each solution/score or to their
+//! batches of equal size. And you can call these methods on closures too:
 //! ```
 //! # use moga::operator::*;
 //! let test = |f: &f32| [f + 1.0, f * 2.0];
@@ -106,6 +106,32 @@
 //! functions that one day I hope to cover:
 //! <https://en.wikipedia.org/wiki/Test_functions_for_optimization>
 //!
+//! # Common pitfalls
+//!
+//! - Closures are great and handy to use until they aren't. A subtle mistake
+//!   can paint your code red and the error will appear far away from where it
+//!   actually happened. And since Rust does not allow you to annotate your
+//!   variables with traits, just keep a sharp eye on your closures or just
+//!   implpement traits instead.  
+//!   Also [`Selection`] and [`Termination`] are implemented for the same
+//!   closure of type `Fn(&S, &[f32; N]) -> bool` which may confuse the compiler
+//!   (and you) from time to time. So move closures into an optimizer as soon as
+//!   possible, or, again, implement those traits for your own type.
+//!
+//! - More often than not parallelization only decreases performance of the
+//!   algorithm. Currently Rust does not provide any benchmarking utilities
+//!   "out-of-the-box" but you can use the tools that your OS provides you, like
+//!   [time](https://www.man7.org/linux/man-pages/man1/time.1.html) on Linux or
+//!   [Measure-Command](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/measure-command)
+//!   in PowerShell on Windows. Make the number of generations low and test it.
+//!
+//! - Types may be hard to keep track of. For example, your solution candidate
+//!   can be of type (f32, f32) and if you optimize for two objectives then
+//!   you will have signatures like `|_: &[(f32, f32)], _: &[[f32, f32]]|` which
+//!   lead to hard-to-catch errors once you mix up something.
+//!   To avoid this, use type aliases. This crate itself uses them - look at the
+//!   [`score`] module.
+//!
 //! # Use cases
 //!
 //! *This crate was designed to solve a very specific problem which, in case of*
@@ -114,26 +140,29 @@
 //!
 //! [`Optimizer`]: crate::optimizer::Optimizer
 //! [`NSGA-II`]: crate::optimizer::nsga::Nsga2
-//! [`Tester`]: crate::tester::Tester
-//! [`Test`]: crate::tester::Test
-//! [`Selector`]: crate::selector::Selector
-//! [`Selection`]: crate::selector::Selection
-//! [`Recombinator`]: crate::recombinator::Recombinator
-//! [`Recombination`]: crate::recombinator::Recombination
-//! [`Mutator`]: crate::mutator::Mutator
-//! [`Mutation`]: crate::mutator::Mutation
-//! [`Terminator`]: crate::terminator::Terminator
-//! [`Termination`]: crate::terminator::Termination
+//! [`Tester`]: crate::test::Tester
+//! [`Test`]: crate::test::Test
+//! [`Selector`]: crate::selection::Selector
+//! [`Selection`]: crate::selection::Selection
+//! [`Recombinator`]: crate::recombination::Recombinator
+//! [`Recombination`]: crate::recombination::Recombination
+//! [`Mutator`]: crate::mutation::Mutator
+//! [`Mutation`]: crate::mutation::Mutation
+//! [`Terminator`]: crate::termination::Terminator
+//! [`Termination`]: crate::termination::Termination
+//! [`GenerationTerminator`]: crate::termination::GenerationTerminator
 //! [`par_each()`]: crate::operator::ParEach::par_each
 //! [`par_batch()`]: crate::operator::ParBatch::par_batch
+//! [`score`]: crate::score
 
 #![warn(missing_docs)]
+
 mod execution;
-pub mod mutator;
+pub mod mutation;
 pub mod operator;
 pub mod optimizer;
-pub mod recombinator;
+pub mod recombination;
 pub mod score;
-pub mod selector;
-pub mod terminator;
-pub mod tester;
+pub mod selection;
+pub mod termination;
+pub mod test;
