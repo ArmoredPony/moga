@@ -103,6 +103,11 @@ impl<S, const N: usize, T> ParBatch<TestOperatorTag, S, N> for T where
 pub trait Tester<S, const N: usize> {
   /// Returns a vector of arrays of fitness scores for given solutions.
   /// The closer a score is to 0 - the better.
+  ///
+  /// # Panics
+  ///
+  /// Doesn't panic itself but the **test executor** will panic if this function
+  /// returns a different number of scores than then number of solutions.
   fn test(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }
 

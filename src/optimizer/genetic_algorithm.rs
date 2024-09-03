@@ -51,6 +51,7 @@ pub trait GeneticAlgorithm<Solution, const OBJECTIVE_NUM: usize> {
   fn terminate(&mut self) -> bool;
 }
 
+#[doc(hidden)]
 impl<Solution, const OBJECTIVE_NUM: usize, G> Optimizer<Solution, OBJECTIVE_NUM>
   for G
 where

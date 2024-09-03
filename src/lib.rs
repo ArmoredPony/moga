@@ -1,5 +1,5 @@
 //! **MOGA** is a Multi-Objective Genetic Algorithm framework for solving a
-//! variety of multi-purpose optimization problems. It strives to be simple,
+//! variety of multi-objective optimization problems. It strives to be simple,
 //! performant and highly focused on usage of closures.
 //!
 //! Here's a [quick start example](#example) for the impatient.
@@ -15,7 +15,7 @@
 //!    fitness scores per each objective for a solution.
 //! 5. **Terminate** the loop if a certain termination condition is met.
 //!
-//! There is a hidden step that occures after evaluation of objective scores:
+//! There is a hidden step that occurs after evaluation of objective scores:
 //! genetic algorithms usually truncate surplus solutions using some sort of
 //! internally implemented truncation operator. Although, the implementation of
 //! the loop itself may differ depending on algorithm.
@@ -72,17 +72,17 @@
 //!
 //! Note, however, that this highly generic implementation leads to unreadable
 //! compile time error messages that appear not during closure definition, but
-//! during creation of an optimizer. If you are struggling with a closure, may
-//! be you should implement a trait directly instead. These implementations are
-//! resolved during compilation so neither approach is less performant.
+//! during creation of an optimizer. If you are struggling with a closure, maybe
+//! you should implement a trait directly instead. These implementations are
+//! resolved during compilation, so neither approach is less performant.
 //!
 //! # Parallelization
 //!
 //! The **operators** from the 3rd column of the table above can be easily
 //! parallelized by calling [`par_each()`] or [`par_batch()`] methods on them
 //! (the latter isn't implemented for [`Recombination`]). This cheap conversion
-//! only wraps the **operator** into a struct, tagging it so an **executor**
-//! will apply such **operator** in parallel for each solution/score or to their
+//! only wraps the **operator** into a struct, tagging it, so an **executor**
+//! will apply such **operator** in parallel to each solution/score or to their
 //! batches of equal size. And you can call these methods on closures too:
 //! ```
 //! # use moga::operator::*;
@@ -90,7 +90,7 @@
 //! let par_test = test.par_batch();
 //! ```
 //!
-//! For simple operators the overhead introduced by parallelization usually
+//! For simple operators, the overhead introduced by parallelization usually
 //! only decreases performance, but when you need it, *you need it*. Benchmark,
 //! if in doubt.
 //!
@@ -98,7 +98,7 @@
 //!
 //! Below lies a solution for the textbook *Schaffer's Problem No.1*. This
 //! solution is oversimplified and very suboptimal, but it demonstrates the
-//! framework's workflow and manages to find pareto optimal solutions for that
+//! framework's workflow and manages to find Pareto optimal solutions for that
 //! problem.
 //! ```no_run
 //! # use rand::{seq::IteratorRandom, Rng};
@@ -140,16 +140,16 @@
 //! ```
 //!
 //! You can find more examples in the *examples* folder in the root of the
-//! project. You can also write your  own and contribute it to the crate. I'd
+//! project. You can also write one yourself and contribute it to the crate. I'd
 //! be very grateful! Here is a list of functions that one day I hope to cover:
 //! <https://en.wikipedia.org/wiki/Test_functions_for_optimization>
 //!
 //! # Common pitfalls
 //!
 //! - Closures are great and handy to use until they aren't. A subtle mistake
-//!   can paint your code red and the error will appear far away from where it
-//!   actually happened. Since Rust does not allow you to annotate your
-//!   variables with traits, just keep a sharp eye on your closures or just
+//!   can paint your code red and the error will appear far away from where you
+//!   actually made a mistake. Since Rust does not allow you to annotate your
+//!   variables with traits, always keep an eye on your closures or just
 //!   implement traits for your own types instead.
 //!
 //! - [`Selection`] and [`Termination`] are implemented for the same closure of
@@ -157,26 +157,26 @@
 //!   from time to time. Move closures into an optimizer as soon as possible,
 //!   or, again, implement those traits for your own type.
 //!
-//! - More often than not parallelization only decreases performance of the
-//!   algorithm. Currently Rust does not provide any benchmarking utilities
+//! - More often than not, parallelization only decreases performance of the
+//!   algorithm. Currently, Rust does not provide any benchmarking utilities
 //!   "out-of-the-box" but you can use the tools that your OS has, like
 //!   [time] on Linux or [Measure-Command] in PowerShell on Windows. Make the
 //!   number of generations low and test it.
 //!
 //! - Types may be hard to keep track of. For example, your solution candidate
-//!   can be of type (f32, f32) and if you optimize for two objectives then
-//!   you will have signatures like `|_: &[(f32, f32)], _: &[[f32, f32]]|` which
-//!   lead to hard-to-catch errors once you mix up something.
+//!   can be of type `(f32, f32)` and if you optimize for two objectives then
+//!   you'll end up with signatures like `|_: &[(f32, f32)], _: &[[f32, f32]]|`
+//!   which leads to hard-to-catch errors once you mix up something.
 //!   This also applies to the number of objectives: if your `test` function
-//!   produces 2 values but `selector` expects 3, then you'll get a compile-time
-//!   error. To avoid this, use [type aliases]. This crate itself uses aliases
-//!   defined in [`score`] module. And you can too.
+//!   produces 2 values per solutions but a `selector` expects 3, then you'll
+//!   get a compile-time  error. To avoid this, use [type aliases]. This crate
+//!   itself uses aliases defined in [`score`] module. And you can use them too.
 //!
 //! # Use cases
 //!
 //! *This crate was designed to solve a very specific problem which, in case of*
-//! *success, will certanly appear in this list. However, if this crate happens*
-//! *to be useful to you, please contact me and I'll put your repo on the list.*
+//! *success, will certainly appear in this list. If this crate happens to be*
+//! *useful to you, please contact me and I'll put your repo on the list.*
 //!
 //! [`Optimizer`]: crate::optimizer::Optimizer
 //! [`NSGA-II`]: crate::optimizer::nsga::Nsga2
@@ -210,8 +210,9 @@ pub mod selection;
 pub mod termination;
 pub mod testing;
 
-// common operators and traits are re-exported by the create. the less common
-// ones, along with optimizer implementations, must be explicitly imported.
+// common operators and traits are re-exported by the crate. the less common
+// ones, along with optimizer implementations, must be imported from their
+// respective modules.
 pub use self::{
   mutation::{Mutation, Mutator},
   operator::{ParBatch, ParBatchOperator, ParEach, ParEachOperator},
