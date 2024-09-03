@@ -140,8 +140,8 @@
 //!
 //! [`Optimizer`]: crate::optimizer::Optimizer
 //! [`NSGA-II`]: crate::optimizer::nsga::Nsga2
-//! [`Tester`]: crate::test::Tester
-//! [`Test`]: crate::test::Test
+//! [`Tester`]: crate::testing::Tester
+//! [`Test`]: crate::testing::Test
 //! [`Selector`]: crate::selection::Selector
 //! [`Selection`]: crate::selection::Selection
 //! [`Recombinator`]: crate::recombination::Recombinator
@@ -165,4 +165,4 @@ pub mod recombination;
 pub mod score;
 pub mod selection;
 pub mod termination;
-pub mod test;
+pub mod testing;

@@ -1,4 +1,4 @@
-//! Termination utilities.
+//! Termination operators and utilities.
 
 use executor::TerminationExecutor;
 use rayon::prelude::*;

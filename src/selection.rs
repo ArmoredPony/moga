@@ -1,4 +1,4 @@
-//! Selection utilities.
+//! Selection operators and utilities.
 
 use executor::SelectionExecutor;
 use rand::prelude::*;

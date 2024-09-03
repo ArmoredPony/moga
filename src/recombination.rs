@@ -1,4 +1,4 @@
-//! Recombination utilities.
+//! Recombination operators and utilities.
 
 use executor::RecombinationExecutor;
 use itertools::Itertools;
@@ -9,9 +9,11 @@ use crate::{
   operator::{tag::RecombinationOperatorTag, ParEach, ParEachOperator},
 };
 
-/// An operator that creates new solutions from all possible unique permutations
+/// An operator that creates new solutions from all possible combinations (in
+/// the [mathematical sense](https://en.wikipedia.org/wiki/Combination))
 /// of parents' references of length `P`. Each permutation produces `O`
-/// offsprings. Created offsprings are passed into `Mutator`.
+/// offsprings. Created offsprings are flattened into a vector and passed into
+/// `Mutator`.
 ///
 /// For example, for a set of solutions `[a, b, c]` of type `S`, a
 /// `Recombination` `r` of type `Fn(&S, &S) -> S` will produce 3 values:

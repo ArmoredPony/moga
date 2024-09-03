@@ -5,13 +5,13 @@ use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 use typed_builder::TypedBuilder;
 
 use crate::{
-  mutator::executor::MutationExecutor,
+  mutation::executor::MutationExecutor,
   optimizer::genetic_algorithm::GeneticAlgorithm,
-  recombinator::executor::RecombinationExecutor,
+  recombination::executor::RecombinationExecutor,
   score::{ParetoDominance, Scores},
-  selector::executor::SelectionExecutor,
-  terminator::executor::TerminationExecutor,
-  tester::executor::TestExecutor,
+  selection::executor::SelectionExecutor,
+  termination::executor::TerminationExecutor,
+  testing::executor::TestExecutor,
 };
 
 /// An implementation of Non-Dominated Sorting Genetic Algorithm II ([NSGA-II]).

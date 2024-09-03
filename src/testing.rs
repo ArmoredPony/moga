@@ -1,4 +1,4 @@
-//! Fitness scores evaluation utilities.
+//! Fitness scores evaluation operators and utilities.
 
 use executor::TestExecutor;
 use rayon::prelude::*;

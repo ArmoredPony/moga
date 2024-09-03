@@ -2,7 +2,7 @@
 
 use std::cmp::Ordering;
 
-/// An alias for fitness score.
+/// An alias for fitness score used by the crate.
 ///
 /// The target value of a score, which it converges at, is considered to be 0.
 /// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.

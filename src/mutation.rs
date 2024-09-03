@@ -1,4 +1,4 @@
-//! Mutation utilities.
+//! Mutation operators and utilities.
 
 use executor::MutationExecutor;
 use rayon::prelude::*;
