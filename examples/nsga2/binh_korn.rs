@@ -2,10 +2,12 @@
 use std::{fs::File, io::Write, path::Path};
 
 use moga::{
-  operator::*,
-  optimizer::{nsga::Nsga2, Optimizer},
+  optimizer::nsga::Nsga2,
   selection::RandomSelector,
   termination::GenerationTerminator,
+  Optimizer,
+  ParBatch,
+  ParEach,
 };
 use rand::{seq::IteratorRandom, Rng};
 use rand_distr::{Distribution, Normal};

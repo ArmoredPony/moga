@@ -18,7 +18,7 @@
 //! There is a hidden step that occures after evaluation of objective scores:
 //! genetic algorithms usually truncate surplus solutions using some sort of
 //! internally implemented truncation operator. Although, the implementation of
-//! main GA loop itself may differ depending on algorithm.
+//! the loop itself may differ depending on algorithm.
 //!
 //! # Optimizers
 //!
@@ -166,3 +166,14 @@ pub mod score;
 pub mod selection;
 pub mod termination;
 pub mod testing;
+
+pub use self::{
+  mutation::{Mutation, Mutator},
+  operator::{ParBatch, ParBatchOperator, ParEach, ParEachOperator},
+  optimizer::Optimizer,
+  recombination::{Recombination, Recombinator},
+  score::{Score, Scores},
+  selection::{Selection, Selector},
+  termination::{Termination, Terminator},
+  testing::{Test, Tester},
+};
