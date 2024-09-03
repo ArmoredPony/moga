@@ -18,10 +18,10 @@ fn main() {
   let test = |x: &f32| [x.powf(2.0), (x - 2.0).powf(2.0)];
   // select 10 random solutions
   let selector = RandomSelector(10);
-  // for each pair of parents `x` and `y` create an offspring `o = x + r * (y - x)`
-  // where `r` is a random value between -1 and 2
-  let recombinator =
-    |x: &f32, y: &f32| x + rand::thread_rng().gen_range(-1.0..2.0) * (y - x);
+  // for each pair of parents `x` and `y` create an offspring
+  // `o = x + r * (y - x)` where `r` is a random value between -1 and 2
+  let r = || rand::thread_rng().gen_range(-1.0..2.0);
+  let recombinator = |x: &f32, y: &f32| x + r() * (y - x);
   // don't mutate solutions
   let mutation = |_: &mut f32| {};
   // terminate after 100 generations

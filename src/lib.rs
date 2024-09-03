@@ -23,7 +23,8 @@
 //! # Optimizers
 //!
 //! As for now, this crate features only one implememtation of [`Optimizer`] -
-//! [`NSGA-II`]. It is a fast and simple genetic algorithm which you can read about here:
+//! [`NSGA-II`]. It is a fast and simple genetic algorithm which you can read
+//! about here:
 //! <https://cs.uwlax.edu/~dmathias/cs419/readings/NSGAIIElitistMultiobjectiveGA.pdf>
 //!
 //! If you happen to implement another kind of genetic algorithm using this
@@ -33,7 +34,8 @@
 //!
 //! Abstractions, that perform each step, are called **operators**. For each
 //! **operator**, this crate provides an **executor** - crate's internal
-//! abstraction, that controls application of each operator to solutions and scores.
+//! abstraction, that controls application of each operator to solutions and
+//! scores.
 //!
 //! Each **operator** is represented with two traits. One of them operates on
 //! whole arrays of solutions and their fitness values, another is applied to
@@ -114,14 +116,15 @@
 //! let test = |x: &f32| [x.powf(2.0), (x - 2.0).powf(2.0)];
 //! // select 10 random solutions
 //! let selector = RandomSelector(10);
-//! // for each pair of parents `x` and `y` create an offspring `o = x + r * (y - x)`
-//! // where `r` is a random value between -1 and 2
-//! let recombinator = |x: &f32, y: &f32| x + rand::thread_rng().gen_range(-1.0..2.0) * (y - x);
+//! // for each pair of parents `x` and `y` create an offspring
+//! // `o = x + r * (y - x)` where `r` is a random value between -1 and 2
+//! let r = || rand::thread_rng().gen_range(-1.0..2.0);
+//! let recombinator = |x: &f32, y: &f32| x + r() * (y - x);
 //! // don't mutate solutions
 //! let mutation = |_: &mut f32| {};
 //! // terminate after 100 generations
 //! let terminator = GenerationTerminator(100);
-//! // a convinient builder with compile time verification from `typed-builder` crate
+//! // a convinient builder with compile time verification
 //! let optimizer = Nsga2::builder()
 //!   .population(population)
 //!   // `test` will be executed concurrently for each batch of solutions
@@ -173,7 +176,7 @@
 //!
 //! *This crate was designed to solve a very specific problem which, in case of*
 //! *success, will certanly appear in this list. However, if this crate happens*
-//! *to be of use to you, please contact me and I will put your repo on the list.*
+//! *to be useful to you, please contact me and I'll put your repo on the list.*
 //!
 //! [`Optimizer`]: crate::optimizer::Optimizer
 //! [`NSGA-II`]: crate::optimizer::nsga::Nsga2
