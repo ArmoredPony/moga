@@ -172,6 +172,7 @@ where
 
 /// A `Terminator` that terminates the algorithm as soon as a certain number of
 /// generations have passed.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct GenerationTerminator(pub usize);
 
 impl<S, const N: usize> Terminator<S, N> for GenerationTerminator {

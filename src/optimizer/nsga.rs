@@ -58,7 +58,7 @@ use crate::{
 /// let solutions = optimizer.optimize();
 /// # }
 /// ```
-#[derive(TypedBuilder)]
+#[derive(TypedBuilder, Debug)]
 pub struct Nsga2<
   Solution,
   Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,

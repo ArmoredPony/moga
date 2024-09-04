@@ -3,15 +3,21 @@
 use std::marker::PhantomData;
 
 pub(crate) mod tag {
+  #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
   pub enum TestOperatorTag {}
+  #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
   pub enum SelectionOperatorTag {}
+  #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
   pub enum RecombinationOperatorTag {}
+  #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
   pub enum MutationOperatorTag {}
+  #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
   pub enum TerminationOperatorTag {}
 }
 
 /// A wrapper around an operator that marks it to
 /// be executed in parallel for **each** solution by executor.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct ParEachOperator<OperatorTag, S, O> {
   operator: O,
   _solution: PhantomData<S>,
@@ -49,6 +55,7 @@ pub trait ParEach<OperatorTag, S, const N: usize, const M: usize> {
 
 /// A wrapper around an operator that marks it to
 /// be executed in parallel for each **batch** of solutions by executor.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct ParBatchOperator<OperatorTag, S, O> {
   operator: O,
   _solution: PhantomData<S>,

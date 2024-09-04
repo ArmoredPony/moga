@@ -189,6 +189,7 @@ where
 }
 
 /// Selects all solutions. No discrimination whatsoever.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
 pub struct AllSelector();
 
 impl<const N: usize, S> Selector<S, N> for AllSelector {
@@ -199,6 +200,7 @@ impl<const N: usize, S> Selector<S, N> for AllSelector {
 
 /// Selects `n` first solutions. 'First' doesn't mean the best, this selector
 /// just returns `n` solutions it sees first.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct FirstSelector(pub usize);
 
 impl<const N: usize, S> Selector<S, N> for FirstSelector {
@@ -208,6 +210,7 @@ impl<const N: usize, S> Selector<S, N> for FirstSelector {
 }
 
 /// Selects `n` random solutions.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct RandomSelector(pub usize);
 
 impl<const N: usize, S> Selector<S, N> for RandomSelector {
@@ -219,6 +222,7 @@ impl<const N: usize, S> Selector<S, N> for RandomSelector {
 }
 
 /// Selects `n` solutions with smallest sum of fitness scores.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct BestSelector(pub usize);
 
 impl<const N: usize, S> Selector<S, N> for BestSelector {
@@ -241,6 +245,7 @@ impl<const N: usize, S> Selector<S, N> for BestSelector {
 
 /// Splits solutions into chunks of size `n` and selects the best solution from
 /// each chunk.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct TournamentSelector(pub usize);
 
 impl<const N: usize, S> Selector<S, N> for TournamentSelector {
