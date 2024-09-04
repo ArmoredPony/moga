@@ -1,9 +1,11 @@
 [package]
 name = "moga"
 description = "A multi-objective genetic algorithm framework"
-keywords = ["genetic", "genetic_algorithm", "evolutionary"]
-license = "MIT"
+keywords = ["genetic", "evolutionary", "algorithm", "framework", "closure"]
+categories = ["algorithms", "concurrency", "science"]
 repository = "https://github.com/ArmoredPony/moga"
+documentation = "https://docs.rs/moga"
+license = "MIT"
 version = "0.1.0"
 edition = "2021"
 
