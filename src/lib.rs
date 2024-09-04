@@ -58,21 +58,22 @@
 //! This crate does not provide the common crossover or mutation functions you'd
 //! expect to see in a usual GA focused crate. The reason for this is that the
 //! crate was developed to mainly operate not on numbers, but on structs or
-//! *sets* of objects of unknown type. The crate does, however, provide a few
-//! [selectors](crate::selection#structs) and one commonly used
+//! *sets* of objects of unknown type. The crate does, however, implement for
+//! you a few [selectors](crate::selection#structs) and one commonly used
 //! [`GenerationTerminator`] for good measure.
 //!
 //! # Closures
 //!
-//! Each **operator** trait is implemented by respective closures. A [`Test`]
+//! Each **operator** trait is implemented by a respective closure. A [`Test`]
 //! takes a solution of type `S` and returns an array of `f32` values - one
-//! value per objective. Thus, instead of implementing [`Test`] you could use
+//! value per objective. Thus, instead of implementing [`Test`], you could use
 //! a closure of type `Fn(&S) -> [f32; N]`. Consult operators' documentation
-//! to see what closures implement which traits.
+//! to see what closures implement which traits (more specifically,
+//! *Implementors* section).
 //!
 //! Note, however, that this highly generic implementation leads to unreadable
-//! compile time error messages that appear not during closure definition, but
-//! during creation of an optimizer. If you are struggling with a closure, maybe
+//! compiler error messages that appear not at closure definition, but at
+//! creation of an optimizer. If you are struggling with a closure, maybe
 //! you should implement a trait directly instead. These implementations are
 //! resolved during compilation, so neither approach is less performant.
 //!
@@ -171,12 +172,6 @@
 //!   produces 2 values per solutions but a `selector` expects 3, then you'll
 //!   get a compile-time  error. To avoid this, use [type aliases]. This crate
 //!   itself uses aliases defined in [`score`] module. And you can use them too.
-//!
-//! # Use cases
-//!
-//! *This crate was designed to solve a very specific problem which, in case of*
-//! *success, will certainly appear in this list. If this crate happens to be*
-//! *useful to you, please contact me and I'll put your repo on the list.*
 //!
 //! [`Optimizer`]: crate::optimizer::Optimizer
 //! [`NSGA-II`]: crate::optimizer::nsga::Nsga2
