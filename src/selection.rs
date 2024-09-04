@@ -57,7 +57,8 @@ impl<S, const N: usize, L> ParBatch<SelectionOperatorTag, S, N> for L where
 }
 
 /// An operator that selects solutions suitable for recombination into a new
-/// generation of solutions.
+/// generation of solutions. Selected solutions' references are passed into
+/// `Recombinator`.
 ///
 /// Due to the fact that [closure lifetime binders] are still unimplemented
 /// (and [it doesn't feel like] they are going to be implemented soon),
@@ -351,6 +352,18 @@ mod tests {
   #[test]
   fn test_random_selector() {
     let selector = RandomSelector(10);
+    takes_selector(&selector);
+  }
+
+  #[test]
+  fn test_best_selector() {
+    let selector = BestSelector(10);
+    takes_selector(&selector);
+  }
+
+  #[test]
+  fn test_tournament_selector() {
+    let selector = TournamentSelector(10);
     takes_selector(&selector);
   }
 }
