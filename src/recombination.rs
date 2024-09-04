@@ -160,11 +160,13 @@ where
       .copied()
       .combinations(P)
       .flat_map(|c| {
-        self.recombine(
-          c.try_into().unwrap_or_else(|_| {
-            panic!("combination size must be equal to `P`")
-          }),
-        )
+        self.recombine(c.try_into().unwrap_or_else(|c: Vec<&S>| {
+          panic!(
+            "combination size must be equal to {} but it is {}",
+            P,
+            c.len()
+          )
+        }))
       })
       .collect()
   }
@@ -184,11 +186,15 @@ where
       .combinations(P)
       .par_bridge()
       .flat_map_iter(|c| {
-        self.operator().recombine(
-          c.try_into().unwrap_or_else(|_| {
-            panic!("combination size must be equal to `P`")
-          }),
-        )
+        self
+          .operator()
+          .recombine(c.try_into().unwrap_or_else(|c: Vec<&S>| {
+            panic!(
+              "combination size must be equal to {} but it is {}",
+              P,
+              c.len()
+            )
+          }))
       })
       .collect()
   }
