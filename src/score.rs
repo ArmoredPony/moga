@@ -7,8 +7,8 @@ use std::cmp::Ordering;
 ///
 /// The target value of a score, which it converges at, is considered to be 0.
 /// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
-/// If it does not align with your actual goal values, ~~too bad~~ rewrite your
-/// objective functions so they **do** converge at 0.
+/// If it does not align with your actual goal values, rewrite your objective
+/// functions so they **do** converge at 0.
 pub type Score = f32;
 
 /// An alias for an array of `N` values of `Score` type.

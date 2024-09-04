@@ -1,7 +1,7 @@
 [package]
 name = "moga"
 description = "A multi-objective genetic algorithm framework"
-keywords = ["genetic", "evolutionary", "algorithm", "framework", "closure"]
+keywords = ["genetic", "evolutionary", "algorithm", "framework", "closures"]
 categories = ["algorithms", "concurrency", "science"]
 repository = "https://github.com/ArmoredPony/moga"
 documentation = "https://docs.rs/moga"

@@ -5,8 +5,8 @@ of multi-objective optimization problems. It strives to be simple, performant
 and highly focused on usage of closures.
 
 This crate provides you with five genetic operator abstractions that you can
-implement and insert into an optimizer - another abstraction that will perform
-the common genetic algorithm loop using your operators:
+implement and insert into an optimizer - another abstraction, that will run the
+common genetic algorithm loop using your operators:
 
 1. **Select** solutions which are suitable for becoming parents of the next
    generation of solutions.
@@ -75,13 +75,13 @@ let solutions = optimizer.optimize();
 
 *This crate was designed to solve a very specific problem which, in case of
 success, will certainly appear in this list. If this crate happens to be
-useful to you, please contact me and I'll be happy to put your repo on the
+useful to you, please contact me, and I'll be happy to put your repo on the
 list.*
 
 ## Contributions
 
 Contributions are very welcome, be it another genetic algorithm implementation
-or an example of some problem solved with **MOGA**.Don't forget to write some
+or an example of some problem solved with **MOGA**. Don't forget to write some
 docs and tests, and run *rustfmt* and *clippy* on your code.
 
 ## License

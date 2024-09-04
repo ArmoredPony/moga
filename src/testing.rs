@@ -20,8 +20,8 @@ use crate::{
 ///
 /// The target value of a score, which it converges at, is considered to be 0.
 /// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
-/// If it does not align with your actual goal values, ~~too bad~~ rewrite your
-/// objective functions so they **do** converge at 0.
+/// If it does not align with your actual goal values, rewrite your objective
+/// functions so they **do** converge at 0.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests
 /// must return an *array* of values. If you want to return a single value,
@@ -85,8 +85,8 @@ impl<S, const N: usize, T> ParBatch<TestOperatorTag, S, N> for T where
 ///
 /// The target value of a score, which it converges at, is considered to be 0.
 /// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
-/// If it does not align with your actual goal values, ~~too bad~~ rewrite your
-/// objective functions so they **do** converge at 0.
+/// If it does not align with your actual goal values, rewrite your objective
+/// functions so they **do** converge at 0.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests
 /// must return an *array* of values. If you want to return a single value,
@@ -107,7 +107,7 @@ pub trait Tester<S, const N: usize> {
   /// # Panics
   ///
   /// Doesn't panic itself but the **test executor** will panic if this function
-  /// returns a different number of scores than then number of solutions.
+  /// returns a different number of scores than the number of solutions.
   fn test(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }
 

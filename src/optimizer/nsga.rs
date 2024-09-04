@@ -14,7 +14,7 @@ use crate::{
   testing::executor::TestExecutor,
 };
 
-/// An implementation of a fast and elitist multiobjective genetic algorithm:
+/// An implementation of a fast and elitist multiobjective genetic algorithm -
 /// [NSGA-II].
 ///
 /// [NSGA-II]: https://cs.uwlax.edu/~dmathias/cs419/readings/NSGAIIElitistMultiobjectiveGA.pdf

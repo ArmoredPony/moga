@@ -39,8 +39,8 @@ use crate::{
 ///
 /// **Note that you always can implement this trait instead of using closures.**
 pub trait Recombination<S, const P: usize, const O: usize> {
-  /// Takes references to a selected parents' combination of length `P`
-  /// and returns `O` created offsprings.   
+  /// Takes references to a combination of `P` selected parents and returns `O`
+  /// created offsprings.   
   fn recombine(&self, parents: [&S; P]) -> [S; O];
 }
 
@@ -161,8 +161,9 @@ where
       .combinations(P)
       .flat_map(|c| {
         self.recombine(
-          c.try_into()
-            .unwrap_or_else(|_| panic!("this conversion should succeed")),
+          c.try_into().unwrap_or_else(|_| {
+            panic!("combination size must be equal to `P`")
+          }),
         )
       })
       .collect()
@@ -184,8 +185,9 @@ where
       .par_bridge()
       .flat_map_iter(|c| {
         self.operator().recombine(
-          c.try_into()
-            .unwrap_or_else(|_| panic!("this conversion should succeed")),
+          c.try_into().unwrap_or_else(|_| {
+            panic!("combination size must be equal to `P`")
+          }),
         )
       })
       .collect()
@@ -198,7 +200,7 @@ mod tests {
 
   type Solution = f32;
 
-  fn takes_recombination_executor<
+  fn takes_recombinator<
     const P: usize,
     const O: usize,
     ES,
@@ -212,107 +214,107 @@ mod tests {
   #[test]
   fn test_recombination_from_closure_1_to_1() {
     let r = |_: &Solution| 0.0;
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_1_to_2() {
     let r = |_: &Solution| (0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_1_to_3() {
     let r = |_: &Solution| (0.0, 0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_1_to_4() {
     let r = |_: &Solution| (0.0, 0.0, 0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_2_to_1() {
     let r = |_: &Solution, _: &Solution| 0.0;
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_2_to_2() {
     let r = |_: &Solution, _: &Solution| (0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_2_to_3() {
     let r = |_: &Solution, _: &Solution| (0.0, 0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_2_to_4() {
     let r = |_: &Solution, _: &Solution| (0.0, 0.0, 0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_3_to_1() {
     let r = |_: &Solution, _: &Solution, _: &Solution| 0.0;
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_3_to_2() {
     let r = |_: &Solution, _: &Solution, _: &Solution| (0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_3_to_3() {
     let r = |_: &Solution, _: &Solution, _: &Solution| (0.0, 0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_3_to_4() {
     let r = |_: &Solution, _: &Solution, _: &Solution| (0.0, 0.0, 0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_4_to_1() {
     let r = |_: &Solution, _: &Solution, _: &Solution, _: &Solution| 0.0;
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_4_to_2() {
     let r = |_: &Solution, _: &Solution, _: &Solution, _: &Solution| (0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombination_from_closure_4_to_3() {
     let r =
       |_: &Solution, _: &Solution, _: &Solution, _: &Solution| (0.0, 0.0, 0.0);
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
@@ -320,14 +322,14 @@ mod tests {
     let r = |_: &Solution, _: &Solution, _: &Solution, _: &Solution| {
       (0.0, 0.0, 0.0, 0.0)
     };
-    takes_recombination_executor(&r);
-    takes_recombination_executor(&r.par_each());
+    takes_recombinator(&r);
+    takes_recombinator(&r.par_each());
   }
 
   #[test]
   fn test_recombinator_from_closure() {
     let recombinator = |_: Vec<&Solution>| vec![0.0, 1.0, 2.0, 3.0, 4.0];
-    takes_recombination_executor(&recombinator);
+    takes_recombinator(&recombinator);
   }
 
   #[test]
@@ -340,8 +342,8 @@ mod tests {
     }
 
     let recombination = CustomRecombination {};
-    takes_recombination_executor(&recombination);
-    takes_recombination_executor(&recombination.par_each());
+    takes_recombinator(&recombination);
+    takes_recombinator(&recombination.par_each());
   }
 
   #[test]
@@ -354,6 +356,6 @@ mod tests {
     }
 
     let recombination = CustomRecombinator {};
-    takes_recombination_executor(&recombination);
+    takes_recombinator(&recombination);
   }
 }
