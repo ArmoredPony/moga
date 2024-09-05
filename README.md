@@ -84,6 +84,10 @@ Contributions are very welcome, be it another genetic algorithm implementation
 or an example of some problem solved with **MOGA**. Don't forget to write some
 docs and tests, and run *rustfmt* and *clippy* on your code.
 
+## Changelog
+
+[Here you go](./CHANGELOG.md)
+
 ## License
 
 This crate is licensed under [MIT](./LICENSE) license.
