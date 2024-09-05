@@ -75,6 +75,20 @@ pub struct Nsga2<
   const PARENT_NUM: usize,
   const OFFSPRING_NUM: usize,
 > {
+  #[builder(setter(
+    transform = |v: Vec<Solution>| {
+      v.is_empty()
+        .not()
+        .then_some(v)
+        .unwrap_or_else(|| panic!("initial population is empty"))
+    },
+    doc = "
+The initial population setter.
+  
+# Panics
+
+Panics if population is empty.",    
+  ))]
   population: Vec<Solution>,
   tester: Tst,
   selector: Sel,
