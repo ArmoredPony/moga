@@ -1,6 +1,6 @@
 //! Implementations of genetic algorithms of NSGA family.
 
-use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
+use std::{cmp::Ordering, collections::HashSet, marker::PhantomData, ops::Not};
 
 use typed_builder::TypedBuilder;
 

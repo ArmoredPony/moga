@@ -136,13 +136,7 @@ where
   E: Tester<S, N>,
 {
   fn execute_tests(&self, solutions: &[S]) -> Vec<Scores<N>> {
-    let scores = self.test(solutions);
-    assert_eq!(
-      scores.len(),
-      solutions.len(),
-      "the number of calculated fitness scores doesn't match the number of solutions"
-    );
-    scores
+    self.test(solutions)
   }
 }
 
