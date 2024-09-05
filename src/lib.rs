@@ -4,23 +4,38 @@
 //!
 //! Here's a [quick start example](#example) for the impatient.
 //!
-//! This crate provides an [`Optimizer`] abstraction that performs a common GA
-//! loop using GA **operators**:
-//! 1. **Select** solutions which are suitable for becoming parents of the next
-//!    generation of solutions.
-//! 2. **Recombine** selected solutions, creating the next generation of
-//!    solutions.
-//! 3. **Mutate** each solution.
-//! 4. **Test** candidate solutions against certain objectives, evaluating
-//!    fitness scores per each objective for a solution.
-//! 5. **Terminate** the loop if a certain termination condition is met.
+//! This crate defines a few abstractions that allow for flexible construction
+//! of genetic algorithms. These abstractions aren't necessarily represented in
+//! crate's user API, as they serve the purpose of helping you to understand the
+//! workflow of this framework.
+//! - **Operator** - is an abstraction over genetic operators: **selection**,
+//!   **recombination**, **mutation**, **test** and **termination**
+//! - Each **operator** is executed by a respective **executor** - an internal
+//!   abstraction, that executes operators based on their type and execution
+//!   strategy: **sequential** or **parallel**
+//! - **Optimizer** is an abstraction that controls execution of each step of
+//!   a typical genetic algorithm loop:
+//!   1. **Select** solutions which are suitable for becoming parents of the
+//!      next generation of solutions
+//!   2. **Recombine** selected solutions, creating the next generation of
+//!      solutions
+//!   3. **Mutate** each solution
+//!   4. **Test** solutions against certain objectives, evaluating fitness
+//!      scores per each objective for each solution
+//!   5. **Terminate** the loop if a certain termination condition is met
 //!
-//! There is a hidden step that occurs after evaluation of objective scores:
-//! genetic algorithms usually truncate surplus solutions using some sort of
-//! internally implemented truncation operator. Although, the implementation of
-//! the loop itself may differ depending on algorithm.
+//! In general, a user should simply supply five genetic **operators** to an
+//! implementation of **optimizer**, which executes them with **executors**,
+//! performing the GA loop and eventually finding Pareto optimal solutions for
+//! the posed problem.
 //!
 //! # Optimizers
+//!
+//! **Optimizer** is an abstraction represented in this crate with [`Optimizer`]
+//! trait. Usually, an **optimizer** consumes five - one per **operator** -
+//! **executors**, which are supplied by the user, and runs the GA loop until
+//! it reaches some termination condition. Although, the implementation of this
+//! loop may differ depending on algorithm.
 //!
 //! As for now, this crate features only one implememtation of [`Optimizer`] -
 //! [`NSGA-II`]. It is a fast and simple genetic algorithm which you can read
@@ -50,10 +65,11 @@
 //! | **Mutation operator**      | [`Mutator`]              | [`Mutation`]                                      |
 //! | **Termination operator**   | [`Terminator`]           | [`Termination`]                                   |
 //!
-//! Each pair of operators implements its **executor**. For example, you can use
-//! [`Mutation`] instead of [`Mutator`] - **executor** will simply apply given
-//! [`Mutation`] to each solution. Only [`Recombination`]s are a bit different:
-//! they are applied to each *combination* of solutions.
+//! Each pair of operators implements its respective **executor**. For example,
+//! you can use [`Mutation`] instead of [`Mutator`] when building an
+//! **optimizer** - **executor** will simply apply given [`Mutation`] to each
+//! solution. Only [`Recombination`]s are a bit different: they are applied to
+//! each [combination] of solutions.
 //!
 //! This crate does not provide the common crossover or mutation functions you'd
 //! expect to see in a usual GA focused crate. The reason for this is that the
@@ -64,12 +80,12 @@
 //!
 //! # Closures
 //!
-//! Each **operator** trait is implemented by a respective closure. A [`Test`]
-//! takes a solution of type `S` and returns an array of `f32` values - one
-//! value per objective. Thus, instead of implementing [`Test`], you could use
-//! a closure of type `Fn(&S) -> [f32; N]`. Consult operators' documentation
-//! to see what closures implement which traits (more specifically,
-//! *Implementors* section).
+//! Each **operator** trait is implemented by one or several closures. For
+//! example, a [`Test`] takes a reference to a solution of type `S` and returns
+//! an array of `f32` values - one value per objective. Thus, instead of
+//! implementing [`Test`] trait for some struct, you can just create a closure
+//! of type `Fn(&S) -> [f32; N]`. Consult *Implementors* section of operators'
+//! documentation to see what closures implement them.
 //!
 //! Note, however, that this highly generic implementation leads to unreadable
 //! compiler error messages that appear not at closure definition, but at
@@ -189,6 +205,7 @@
 //! [`par_each()`]: crate::operator::ParEach::par_each
 //! [`par_batch()`]: crate::operator::ParBatch::par_batch
 //! [`score`]: crate::score
+//! [combination]: https://en.wikipedia.org/wiki/Combination
 //! [time]: https://www.man7.org/linux/man-pages/man1/time.1.html
 //! [Measure-Command]: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/measure-command
 //! [type aliases]: https://doc.rust-lang.org/reference/items/type-aliases.html
