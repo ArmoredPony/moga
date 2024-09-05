@@ -1,6 +1,7 @@
 //! Abstract optimizer.
 
 pub mod nsga;
+pub mod spea;
 
 /// Represents an abstract optimizer.
 pub trait Optimizer<Solution, const OBJECTIVE_NUM: usize>: Sized {
