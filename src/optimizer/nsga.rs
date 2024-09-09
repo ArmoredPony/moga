@@ -84,11 +84,11 @@ pub struct Nsga2<
         .unwrap_or_else(|| panic!("initial population is empty"))
     },
     doc = "
-The initial population setter.
-  
-# Panics
+      The initial population setter.
 
-Panics if population is empty.",    
+      # Panics
+
+      Panics if population is empty.",    
   ))]
   population: Vec<Solution>,
   tester: Tst,
