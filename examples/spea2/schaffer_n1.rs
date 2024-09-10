@@ -1,9 +1,9 @@
-//! Schaffer's Problem No.1 solution using NSGA-II.
+//! Schaffer's Problem No.1 solution using SPEA-II.
 
 use std::{fs::File, io::Write, path::Path};
 
 use moga::{
-  optimizer::nsga::Nsga2,
+  optimizer::spea::Spea2,
   selection::RandomSelector,
   termination::GenerationTerminator,
   Optimizer,
@@ -14,6 +14,7 @@ use rand::{seq::IteratorRandom, Rng};
 fn main() {
   // initial solutions lie between 0 and 100
   let population = (0..100).map(|i| i as f32).collect::<Vec<_>>();
+  let archive_size = 100;
   // objective functions `f1(x) = x^2` and `f2(x) = (x - 2)^2`
   let test = |x: &f32| [x.powf(2.0), (x - 2.0).powf(2.0)];
   // select 10 random solutions
@@ -28,10 +29,11 @@ fn main() {
   let terminator = GenerationTerminator(100);
 
   // a convinient builder with compile time verification from `typed-builder` crate
-  let nsga2 = Nsga2::builder()
+  let spea2 = Spea2::builder()
     .population(population)
+    .archive_size(archive_size)
     // `test` will be executed concurrently for each batch of solutions
-    .tester(test.par_batch())
+    .tester(test)
     .selector(selector)
     .recombinator(recombinator)
     .mutator(mutation)
@@ -39,7 +41,7 @@ fn main() {
     .build();
 
   // upon termination optimizer returns the best solutions it has found
-  let solutions = nsga2.optimize();
+  let solutions = spea2.optimize();
 
   // write solutions to file in examples/nsga2/binh_korn.csv
   let _ = File::create(Path::new(file!()).with_file_name("schaffer_n1.csv"))

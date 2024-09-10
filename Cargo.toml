@@ -29,3 +29,11 @@ path = "examples/nsga2/binh_korn.rs"
 [[example]]
 name = "nsga2_schaffer_n1"
 path = "examples/nsga2/schaffer_n1.rs"
+
+[[example]]
+name = "spea2_binh_korn"
+path = "examples/spea2/binh_korn.rs"
+
+[[example]]
+name = "spea2_schaffer_n1"
+path = "examples/spea2/schaffer_n1.rs"
