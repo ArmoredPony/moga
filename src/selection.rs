@@ -14,7 +14,6 @@ use crate::{
     ParEachOperator,
   },
   score::Scores,
-  Score,
 };
 
 /// An operator that decides whether a solution will be selected as a parent

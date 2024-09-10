@@ -1,6 +1,5 @@
 //! Abstract optimizer.
 
-mod genetic_algorithm;
 pub mod nsga;
 
 /// Represents an abstract optimizer.

@@ -4,9 +4,9 @@ use std::{cmp::Ordering, collections::HashSet, marker::PhantomData};
 
 use typed_builder::TypedBuilder;
 
+use super::Optimizer;
 use crate::{
   mutation::executor::MutationExecutor,
-  optimizer::genetic_algorithm::GeneticAlgorithm,
   recombination::executor::RecombinationExecutor,
   score::{ParetoDominance, Scores},
   selection::executor::SelectionExecutor,
@@ -81,8 +81,6 @@ pub struct Nsga2<
   recombinator: Rec,
   mutator: Mut,
   terminator: Ter,
-  #[builder(setter(skip), default = vec![])]
-  scores: Vec<Scores<OBJECTIVE_NUM>>,
   #[builder(setter(skip), default = population.len())]
   initial_population_size: usize,
   #[builder(setter(skip), default)]
@@ -127,8 +125,8 @@ impl<
     const OBJECTIVE_NUM: usize,
     const PARENT_NUM: usize,
     const OFFSPRING_NUM: usize,
-  > GeneticAlgorithm<Solution, OBJECTIVE_NUM>
-  for Nsga2<
+  >
+  Nsga2<
     Solution,
     Tst,
     Sel,
@@ -145,57 +143,7 @@ impl<
     OFFSPRING_NUM,
   >
 {
-  fn peek_population(&self) -> &[Solution] {
-    &self.population
-  }
-
-  fn peek_scores(&self) -> &[Scores<OBJECTIVE_NUM>] {
-    &self.scores
-  }
-
-  fn take_population(&mut self) -> Vec<Solution> {
-    std::mem::take(&mut self.population)
-  }
-
-  fn take_scores(&mut self) -> Vec<Scores<OBJECTIVE_NUM>> {
-    std::mem::take(&mut self.scores)
-  }
-
-  fn set_population(&mut self, population: Vec<Solution>) {
-    self.population = population;
-  }
-
-  fn set_scores(&mut self, scores: Vec<Scores<OBJECTIVE_NUM>>) {
-    self.scores = scores;
-  }
-
-  fn test(&self, population: &[Solution]) -> Vec<Scores<OBJECTIVE_NUM>> {
-    self.tester.execute_tests(population)
-  }
-
-  fn select<'a>(
-    &mut self,
-    population: &'a [Solution],
-    scores: &[Scores<OBJECTIVE_NUM>],
-  ) -> Vec<&'a Solution> {
-    self.selector.execute_selection(population, scores)
-  }
-
-  fn create(&self, population: Vec<&Solution>) -> Vec<Solution> {
-    self.recombinator.execute_recombination(population)
-  }
-
-  fn mutate(&self, population: &mut [Solution]) {
-    self.mutator.execute_mutations(population)
-  }
-
-  fn terminate(&mut self) -> bool {
-    self
-      .terminator
-      .execute_termination(&self.population, &self.scores)
-  }
-
-  fn truncate(
+  fn crowding_distance_selection(
     &self,
     solutions: Vec<Solution>,
     scores: Vec<Scores<OBJECTIVE_NUM>>,
@@ -330,14 +278,14 @@ impl<
       "new_solutions_indices must have only unique indices"
     );
 
-    let mut some_solutions: Vec<_> = solutions.into_iter().map(Some).collect();
-    let mut some_scores: Vec<_> = scores.into_iter().map(Some).collect();
-    let (new_sols, new_scs): (Vec<Solution>, Vec<_>) = new_solutions_indices
+    let mut some_sols: Vec<_> = solutions.into_iter().map(Some).collect();
+    let mut some_scs: Vec<_> = scores.into_iter().map(Some).collect();
+    let (new_sols, new_scs): (Vec<_>, Vec<_>) = new_solutions_indices
       .into_iter()
       .map(|idx| {
         (
-          some_solutions[idx].take().expect("must be something here"),
-          some_scores[idx].take().expect("must be something here"),
+          some_sols[idx].take().expect("must be something here"),
+          some_scs[idx].take().expect("must be something here"),
         )
       })
       .unzip();
@@ -354,5 +302,74 @@ impl<
     );
 
     (new_sols, new_scs)
+  }
+}
+
+impl<
+    Solution,
+    Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
+    Sel: SelectionExecutor<Solution, OBJECTIVE_NUM, SelExecStrat>,
+    Rec: RecombinationExecutor<Solution, PARENT_NUM, OFFSPRING_NUM, RecExecStrat>,
+    Mut: MutationExecutor<Solution, MutExecStrat>,
+    Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
+    TstExecStrat,
+    TerExecStrat,
+    SelExecStrat,
+    MutExecStrat,
+    RecExecStrat,
+    const OBJECTIVE_NUM: usize,
+    const PARENT_NUM: usize,
+    const OFFSPRING_NUM: usize,
+  > Optimizer<Solution, OBJECTIVE_NUM>
+  for Nsga2<
+    Solution,
+    Tst,
+    Sel,
+    Rec,
+    Mut,
+    Ter,
+    TstExecStrat,
+    TerExecStrat,
+    SelExecStrat,
+    MutExecStrat,
+    RecExecStrat,
+    OBJECTIVE_NUM,
+    PARENT_NUM,
+    OFFSPRING_NUM,
+  >
+{
+  /// Runs NSGA-II `Optimizer` until the termination condition is met, then
+  /// returns the last found population.
+  ///
+  /// # Panics
+  ///
+  /// Panic if at some point the population becomes empty, or the number of
+  /// scores doesn't match the population size.
+  fn optimize(mut self) -> Vec<Solution> {
+    let mut population = std::mem::take(&mut self.population);
+    let mut scores = self.tester.execute_tests(&population);
+
+    while !self.terminator.execute_termination(&population, &scores) {
+      assert!(!population.is_empty(), "the population is empty");
+      assert_eq!(
+        scores.len(),
+        population.len(),
+        "the number of calculated fitness scores doesn't match size of the population"
+      );
+      let selected_population =
+        self.selector.execute_selection(&population, &scores);
+      let mut created_population =
+        self.recombinator.execute_recombination(selected_population);
+      self.mutator.execute_mutations(&mut created_population);
+      let mut created_scores = self.tester.execute_tests(&created_population);
+
+      population.append(&mut created_population);
+      scores.append(&mut created_scores);
+
+      (population, scores) =
+        self.crowding_distance_selection(population, scores);
+    }
+
+    population
   }
 }
