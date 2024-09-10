@@ -4,9 +4,9 @@ use std::{cmp::Ordering, marker::PhantomData, ops::Not};
 
 use typed_builder::TypedBuilder;
 
+use super::Optimizer;
 use crate::{
   mutation::executor::MutationExecutor,
-  optimizer::genetic_algorithm::GeneticOptimizer,
   recombination::executor::RecombinationExecutor,
   score::{ParetoDominance, Scores},
   selection::executor::SelectionExecutor,
@@ -47,6 +47,20 @@ pub struct Spea2<
       Panics if population is empty.",    
   ))]
   population: Vec<Solution>,
+  #[builder(setter(
+    transform = |v: usize| {
+      if v == 0 {
+        panic!("archive size cannot be 0")
+      }
+      v
+    },
+    doc = "
+      The archive size setter.
+
+      # Panics
+
+      Panics if archive size is 0.",    
+  ))]
   archive_size: usize,
   tester: Tst,
   selector: Sel,
@@ -93,8 +107,8 @@ impl<
     const OBJECTIVE_NUM: usize,
     const PARENT_NUM: usize,
     const OFFSPRING_NUM: usize,
-  > GeneticOptimizer<Solution, OBJECTIVE_NUM>
-  for Spea2<
+  >
+  Spea2<
     Solution,
     Tst,
     Sel,
@@ -111,41 +125,11 @@ impl<
     OFFSPRING_NUM,
   >
 {
-  fn take_initial_population(&mut self) -> Vec<Solution> {
-    std::mem::take(&mut self.population)
-  }
-
-  fn test(&self, population: &[Solution]) -> Vec<Scores<OBJECTIVE_NUM>> {
-    self.tester.execute_tests(population)
-  }
-
-  fn select<'a>(
-    &mut self,
-    population: &'a [Solution],
-    scores: &[Scores<OBJECTIVE_NUM>],
-  ) -> Vec<&'a Solution> {
-    self.selector.execute_selection(population, scores)
-  }
-
-  fn create(&self, population: Vec<&Solution>) -> Vec<Solution> {
-    self.recombinator.execute_recombination(population)
-  }
-
-  fn mutate(&self, population: &mut [Solution]) {
-    self.mutator.execute_mutations(population)
-  }
-
-  fn terminate(&mut self) -> bool {
-    self
-      .terminator
-      .execute_termination(&self.population, &self.scores)
-  }
-
-  fn truncate(
+  fn environmental_selection<'a>(
     &self,
-    solutions: Vec<Solution>,
-    scores: Vec<Scores<OBJECTIVE_NUM>>,
-  ) -> (Vec<Solution>, Vec<Scores<OBJECTIVE_NUM>>) {
+    solutions: &'a [Solution],
+    scores: &[Scores<OBJECTIVE_NUM>],
+  ) -> (Vec<&'a Solution>) {
     // each i-th value is a number of solutions that i-th solution dominates
     let mut strength_values: Vec<StrengthValue> = vec![0; solutions.len()];
     // count strength values for each solution
@@ -164,7 +148,7 @@ impl<
 
     // each i-th value is a sum of strength values of solutions that dominate
     // i-th solution
-    let mut solution_fitness: Vec<(SolutionIndex, Fitness)> = solutions
+    let mut sol_indices_fitness: Vec<(SolutionIndex, Fitness)> = solutions
       .iter()
       .enumerate()
       .map(|(i, _)| (i, 0.0))
@@ -177,25 +161,110 @@ impl<
         let q_idx = p_idx + i + 1;
         match p_sc.dominance(q_sc) {
           Ordering::Less => {
-            solution_fitness[q_idx].1 += f64::from(strength_values[p_idx])
+            sol_indices_fitness[q_idx].1 += f64::from(strength_values[p_idx])
           }
           Ordering::Greater => {
-            solution_fitness[p_idx].1 += f64::from(strength_values[q_idx])
+            sol_indices_fitness[p_idx].1 += f64::from(strength_values[q_idx])
           }
           Ordering::Equal => {}
         }
       }
     }
 
-    // truncate solution by their fitness
-    solution_fitness
-      .sort_by(|a, b| a.1.partial_cmp(&b.1).expect("NaN encountered"));
-    let nondommed_idx = solution_fitness.partition_point(|(_, f)| *f == 0.0);
+    // sort and truncate solution by their fitness
+    sol_indices_fitness
+      .sort_unstable_by(|a, b| a.1.partial_cmp(&b.1).expect("NaN encountered"));
+    let nondommed_idx = sol_indices_fitness.partition_point(|(_, f)| *f < 1.0);
     // is there are more nondommed solutions than the archive can fit...
     if nondommed_idx > self.archive_size {
       // TODO: densities
     }
+    // otherwise truncate solutions so the least dominated ones remain
+    // if there are less solutions than the archive size, then this operation
+    // won't truncate anything, and the archive will not be full
+    else {
+      sol_indices_fitness.truncate(self.archive_size);
+    }
 
-    todo!()
+    debug_assert!(
+      sol_indices_fitness.len() <= self.archive_size,
+      "new archive population size cannot be bigger than the archive size"
+    );
+
+    sol_indices_fitness
+      .into_iter()
+      .map(|(idx, _)| &solutions[idx])
+      .collect()
+  }
+}
+
+impl<
+    Solution,
+    Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
+    Sel: SelectionExecutor<Solution, OBJECTIVE_NUM, SelExecStrat>,
+    Rec: RecombinationExecutor<Solution, PARENT_NUM, OFFSPRING_NUM, RecExecStrat>,
+    Mut: MutationExecutor<Solution, MutExecStrat>,
+    Ter: TerminationExecutor<Solution, OBJECTIVE_NUM, TerExecStrat>,
+    TstExecStrat,
+    TerExecStrat,
+    SelExecStrat,
+    MutExecStrat,
+    RecExecStrat,
+    const OBJECTIVE_NUM: usize,
+    const PARENT_NUM: usize,
+    const OFFSPRING_NUM: usize,
+  > Optimizer<Solution, OBJECTIVE_NUM>
+  for Spea2<
+    Solution,
+    Tst,
+    Sel,
+    Rec,
+    Mut,
+    Ter,
+    TstExecStrat,
+    TerExecStrat,
+    SelExecStrat,
+    MutExecStrat,
+    RecExecStrat,
+    OBJECTIVE_NUM,
+    PARENT_NUM,
+    OFFSPRING_NUM,
+  >
+{
+  /// Runs SPEA-II `Optimizer` until the termination condition is met, then
+  /// returns the last found population.
+  ///
+  /// # Panics
+  ///
+  /// Panic if at some point the population becomes empty, or the number of
+  /// scores doesn't match the population size.
+  fn optimize(mut self) -> Vec<Solution> {
+    let mut population = std::mem::take(&mut self.population);
+    let mut scores = self.tester.execute_tests(&population);
+
+    while !self.terminator.execute_termination(&population, &scores) {
+      assert!(!population.is_empty(), "the population is empty");
+      assert_eq!(
+        scores.len(),
+        population.len(),
+        "the number of calculated fitness scores doesn't match size of the population"
+      );
+      let survived_solutions =
+        self.environmental_selection(&population, &scores);
+      let selected_population =
+        self.selector.execute_selection(&population, &scores);
+      let mut created_population =
+        self.recombinator.execute_recombination(selected_population);
+      self.mutator.execute_mutations(&mut created_population);
+      let mut created_scores = self.tester.execute_tests(&created_population);
+
+      population.append(&mut created_population);
+      scores.append(&mut created_scores);
+
+      // (population, scores) =
+      //   self.crowding_distance_selection(population, scores);
+    }
+
+    population
   }
 }
