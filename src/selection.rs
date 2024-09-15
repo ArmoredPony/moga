@@ -13,7 +13,7 @@ use crate::{
     ParEach,
     ParEachOperator,
   },
-  score::Scores,
+  score::{ParetoDominance, Scores},
 };
 
 /// An operator that decides whether a solution will be selected as a parent
@@ -217,6 +217,74 @@ impl<const N: usize, S> Selector<S, N> for RandomSelector {
     solutions
       .iter()
       .choose_multiple(&mut rand::thread_rng(), self.0)
+  }
+}
+
+/// Selects at most `n` solutions from random chunks of *unique* solutions of
+/// size `k`. Each solution can be selected only once.
+///
+/// From each chunk, the least dominated solution is selected. If there are
+/// multiple equally dominated solutions, a random one is selected.
+/// This selector selects one solution per a chunk, so it may select less than
+/// `n` solutions. If you want to select all solutions this selector can proide,
+/// set this value to `usize::MAX`.
+///
+/// # Panics
+///
+/// Will panic in runtime if `k` is 0.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct TournamentSelectorWithoutReplacement(pub usize, pub usize);
+
+impl<const N: usize, S> Selector<S, N>
+  for TournamentSelectorWithoutReplacement
+{
+  fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S> {
+    rand::seq::index::sample(
+      &mut rand::thread_rng(),
+      solutions.len(),
+      solutions.len(),
+    )
+    .into_vec()
+    .chunks(self.1)
+    .take(self.0)
+    .map(|chunk| {
+      chunk
+        .iter()
+        .min_by(|i, j| scores[**i].dominance(&scores[**j]))
+        .map(|idx| &solutions[*idx])
+        .expect("chunk must not be empty")
+    })
+    .collect()
+  }
+}
+
+/// Selects `n` solutions from random chunks of solutions of size `k`.
+/// Each solution can be selected multiple times.
+///
+/// From each chunk, the least dominated solution is selected. If there are
+/// multiple equally dominated solutions, a random one is selected.
+///
+/// # Panics
+///
+/// Will panic in runtime if `k` is 0 or bigger than `n`.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct TournamentSelectorWithReplacement(pub usize, pub usize);
+
+impl<const N: usize, S> Selector<S, N> for TournamentSelectorWithReplacement {
+  fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S> {
+    (0..self.0)
+      .map(|_| {
+        rand::seq::index::sample(
+          &mut rand::thread_rng(),
+          solutions.len(),
+          self.1,
+        )
+        .iter()
+        .min_by(|i, j| scores[*i].dominance(&scores[*j]))
+        .map(|idx| &solutions[idx])
+        .expect("chunk must not be empty")
+      })
+      .collect()
   }
 }
 
