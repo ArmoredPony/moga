@@ -262,11 +262,13 @@ impl<const N: usize, S> Selector<S, N>
 /// Each solution can be selected multiple times.
 ///
 /// From each chunk, the least dominated solution is selected. If there are
-/// multiple equally dominated solutions, a random one is selected.
+/// multiple equally dominated solutions, a random one is selected. If `k` is
+/// bigger than the number of solutions, all solutions will form a single chunk
+/// from which `n` solutions will be selected.
 ///
 /// # Panics
 ///
-/// Will panic in runtime if `k` is 0 or bigger than `n`.
+/// Will panic in runtime if `k` is 0.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct TournamentSelectorWithReplacement(pub usize, pub usize);
 
@@ -277,7 +279,7 @@ impl<const N: usize, S> Selector<S, N> for TournamentSelectorWithReplacement {
         rand::seq::index::sample(
           &mut rand::thread_rng(),
           solutions.len(),
-          self.1,
+          self.1.min(solutions.len()),
         )
         .iter()
         .min_by(|i, j| scores[*i].dominance(&scores[*j]))

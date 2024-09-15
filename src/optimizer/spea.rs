@@ -127,8 +127,8 @@ impl<
 {
   fn environmental_selection(
     &self,
-    solutions: &[Solution],
-    scores: &[Scores<OBJECTIVE_NUM>],
+    solutions: Vec<Solution>,
+    scores: Vec<Scores<OBJECTIVE_NUM>>,
   ) -> (Vec<Solution>, Vec<Scores<OBJECTIVE_NUM>>) {
     // each i-th value is a number of solutions that i-th solution dominates
     let mut strength_values: Vec<StrengthValue> = vec![0; solutions.len()];
@@ -168,7 +168,7 @@ impl<
       }
     }
 
-    // sort and truncate solution by their fitness
+    // sort and truncate solutions by their fitness
     sol_indices_fitness
       .sort_unstable_by(|a, b| a.1.partial_cmp(&b.1).expect("NaN encountered"));
     let nondommed_cnt = sol_indices_fitness.partition_point(|(_, f)| *f == 0.0);
@@ -176,110 +176,120 @@ impl<
       .into_iter()
       .map(|(idx, _)| idx)
       .collect();
-    // is there are more nondommed solutions than the archive can fit...
+
+    // if there are more nondommed solutions than the archive can fit...
     if nondommed_cnt >= self.archive_size {
       let k = ((solutions.len() + self.archive_size) as f32).sqrt() as usize;
-      let dommed_sol = new_sol_indicies.split_off(nondommed_cnt);
+      let dommed_sol_indices = new_sol_indicies.split_off(nondommed_cnt);
+
+      // DESIGN 1
 
       let mut distances: Vec<(SolutionIndex, Vec<Distance>)> = (0
         ..new_sol_indicies.len())
         .map(|i| (i, Vec::with_capacity(new_sol_indicies.len() - 1)))
         .collect();
 
-      for i in 0..new_sol_indicies.len() {
-        let (p_idx, rest) = new_sol_indicies[i..]
-          .split_first()
-          .expect("no solutions remain");
+      // for i in 0..new_sol_indicies.len() {
+      //   let (p_idx, rest) = new_sol_indicies[i..]
+      //     .split_first()
+      //     .expect("no solutions remain");
 
-        for (j, q_idx) in rest.iter().enumerate() {
-          let j = i + j + 1;
-          let p_sc = scores[*p_idx];
-          let q_sc = scores[*q_idx];
-          let d = p_sc
-            .iter()
-            .zip(q_sc)
-            .map(|(a, b)| (a - b).powf(2.0) as f64)
-            .sum();
-          distances[i].1.push(d);
-          distances[j].1.push(d);
-        }
-        for d_idx in &dommed_sol {
-          if distances[i].1.len() >= k {
-            break;
-          }
-          let p_sc = scores[*p_idx];
-          let d_sc = scores[*d_idx];
-          let d = p_sc
-            .iter()
-            .zip(d_sc)
-            .map(|(a, b)| (a - b).powf(2.0) as f64)
-            .sum();
-          distances[i].1.push(d);
-        }
-        distances[i]
-          .1
-          .sort_unstable_by(|a, b| a.partial_cmp(b).expect("NaN encountered"));
-      }
-      distances
-        .sort_by(|a, b| b.1[k].partial_cmp(&a.1[k]).expect("NaN encountered"));
-      new_sol_indicies = distances
-        .into_iter()
-        .take(self.archive_size)
-        .map(|(idx, _)| idx)
-        .collect();
-
-      // while new_sol_indicies.len() > self.archive_size {
-      //   let mut distances: Vec<(SolutionIndex, Vec<f32>)> = (0
-      //     ..new_sol_indicies.len())
-      //     .map(|i| (i, Vec::with_capacity(new_sol_indicies.len() - 1)))
-      //     .collect();
-
-      //   for i in 0..new_sol_indicies.len() {
-      //     let (p_idx, rest) = new_sol_indicies[i..]
-      //       .split_first()
-      //       .expect("no solutions remain");
-
-      //     for (j, q_idx) in rest.iter().enumerate() {
-      //       let j = i + j + 1;
-      //       let p_sc = scores[*p_idx];
-      //       let q_sc = scores[*q_idx];
-      //       let d: f32 =
-      //         p_sc.iter().zip(q_sc).map(|(a, b)| (a - b).powf(2.0)).sum();
-      //       distances[i].1.push(d);
-      //       distances[j].1.push(d);
-      //     }
-      //     for d_idx in &dommed_sol {
-      //       if distances[i].1.len() >= k {
-      //         break;
-      //       }
-      //       let p_sc = scores[*p_idx];
-      //       let d_sc = scores[*d_idx];
-      //       let d: f32 =
-      //         p_sc.iter().zip(d_sc).map(|(a, b)| (a - b).powf(2.0)).sum();
-      //       distances[i].1.push(d);
-      //     }
-      //     distances[i].1.sort_unstable_by(|a, b| {
-      //       a.partial_cmp(b).expect("NaN encountered")
-      //     });
-      //     // distances[i].1.truncate(k);
+      //   for (j, q_idx) in rest.iter().enumerate() {
+      //     let j = i + j + 1;
+      //     let p_sc = scores[*p_idx];
+      //     let q_sc = scores[*q_idx];
+      //     let d = p_sc
+      //       .iter()
+      //       .zip(q_sc)
+      //       .map(|(a, b)| (a - b).powf(2.0) as f64)
+      //       .sum();
+      //     distances[i].1.push(d);
+      //     distances[j].1.push(d);
       //   }
-
-      //   let removed_idx = distances
-      //     .iter()
-      //     .min_by(|a, b| {
-      //       for (i, j) in a.1[..k].iter().rev().zip(b.1[..k].iter().rev()) {
-      //         match i.partial_cmp(j).expect("NaN encountered") {
-      //           Ordering::Less => return Ordering::Less,
-      //           Ordering::Greater => return Ordering::Greater,
-      //           Ordering::Equal => {}
-      //         }
-      //       }
-      //       Ordering::Less
-      //     })
-      //     .expect("no solutions remain")
-      //     .0;
-      //   new_sol_indicies.remove(removed_idx);
+      //   for d_idx in &dommed_sol_indices {
+      //     if distances[i].1.len() >= k {
+      //       break;
+      //     }
+      //     let p_sc = scores[*p_idx];
+      //     let d_sc = scores[*d_idx];
+      //     let d = p_sc
+      //       .iter()
+      //       .zip(d_sc)
+      //       .map(|(a, b)| (a - b).powf(2.0) as f64)
+      //       .sum();
+      //     distances[i].1.push(d);
+      //   }
+      //   distances[i]
+      //     .1
+      //     .sort_unstable_by(|a, b| a.partial_cmp(b).expect("NaN encountered"));
       // }
+      // distances
+      //   .sort_by(|a, b| b.1[k].partial_cmp(&a.1[k]).expect("NaN encountered"));
+      // new_sol_indicies = distances
+      //   .into_iter()
+      //   .take(self.archive_size)
+      //   .map(|(idx, _)| idx)
+      //   .collect();
+
+      // DESIGN 2
+
+      while new_sol_indicies.len() > self.archive_size {
+        let mut distances: Vec<(SolutionIndex, Vec<f32>)> = (0
+          ..new_sol_indicies.len())
+          .map(|i| (i, Vec::with_capacity(new_sol_indicies.len() - 1)))
+          .collect();
+
+        for i in 0..new_sol_indicies.len() {
+          let (p_idx, rest) = new_sol_indicies[i..]
+            .split_first()
+            .expect("no solutions remain");
+
+          for (j, q_idx) in rest.iter().enumerate() {
+            let j = i + j + 1;
+            let p_sc = scores[*p_idx];
+            let q_sc = scores[*q_idx];
+            let d: f32 =
+              p_sc.iter().zip(q_sc).map(|(a, b)| (a - b).powf(2.0)).sum();
+            distances[i].1.push(d);
+            distances[j].1.push(d);
+          }
+          for d_idx in &dommed_sol_indices {
+            if distances[i].1.len() >= k {
+              break;
+            }
+            let p_sc = scores[*p_idx];
+            let d_sc = scores[*d_idx];
+            let d: f32 =
+              p_sc.iter().zip(d_sc).map(|(a, b)| (a - b).powf(2.0)).sum();
+            distances[i].1.push(d);
+          }
+          distances[i].1.sort_unstable_by(|a, b| {
+            a.partial_cmp(b).expect("NaN encountered")
+          });
+          distances[i].1.truncate(k);
+        }
+        distances.sort_by(|a, b| {
+          a.1[k - 1]
+            .partial_cmp(&b.1[k - 1])
+            .expect("NaN encountered")
+        });
+
+        let removed_idx = distances
+          .iter()
+          .min_by(|a, b| {
+            for (i, j) in a.1.iter().zip(b.1.iter()) {
+              match i.partial_cmp(j).expect("NaN encountered") {
+                Ordering::Less => return Ordering::Less,
+                Ordering::Greater => return Ordering::Greater,
+                Ordering::Equal => {}
+              }
+            }
+            Ordering::Equal
+          })
+          .expect("no solutions remain")
+          .0;
+        new_sol_indicies.remove(removed_idx);
+      }
 
       debug_assert_eq!(new_sol_indicies.len(), self.archive_size);
     }
@@ -295,10 +305,15 @@ impl<
       "new archive population size cannot be bigger than the archive size"
     );
 
+    let mut solutions = solutions.into_iter().map(Some).collect::<Vec<_>>();
     new_sol_indicies
       .into_iter()
-      // TODO: reimplement operators and remove cloning
-      .map(|idx| (solutions[idx].clone(), scores[idx]))
+      .map(|idx| {
+        (
+          std::mem::take(&mut solutions[idx]).expect("must be something here"),
+          scores[idx],
+        )
+      })
       .unzip()
   }
 }
@@ -364,7 +379,7 @@ impl<
         "the number of calculated fitness scores doesn't match size of the population"
       );
       let (survived_solutions, survived_scores) =
-        self.environmental_selection(&archive, &archive_scores);
+        self.environmental_selection(archive, archive_scores);
       let selected_solutions = self
         .selector
         .execute_selection(&survived_solutions, &survived_scores);
@@ -379,6 +394,23 @@ impl<
       population_scores = created_scores;
     }
 
+    let mut selected_sols = vec![true; archive.len()];
+    for i in 0..selected_sols.len() - 1 {
+      if !selected_sols[i] {
+        continue;
+      }
+      for j in (i + 1)..selected_sols.len() {
+        match archive_scores[i].dominance(&archive_scores[j]) {
+          Ordering::Less => selected_sols[j] = false,
+          Ordering::Greater => selected_sols[i] = false,
+          Ordering::Equal => {}
+        }
+      }
+    }
     archive
+      .into_iter()
+      .zip(selected_sols)
+      .filter_map(|(sol, is_selected)| is_selected.then_some(sol))
+      .collect()
   }
 }

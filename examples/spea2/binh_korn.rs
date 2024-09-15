@@ -5,7 +5,12 @@ use std::{fs::File, io::Write, path::Path};
 
 use moga::{
   optimizer::spea::Spea2,
-  selection::{FirstSelector, RandomSelector},
+  selection::{
+    FirstSelector,
+    RandomSelector,
+    TournamentSelectorWithReplacement,
+    TournamentSelectorWithoutReplacement,
+  },
   termination::GenerationTerminator,
   Optimizer,
   ParBatch,
@@ -43,7 +48,7 @@ fn main() {
   let terminator = GenerationTerminator(1000);
 
   // a `Selector` that selects 10 values randomly
-  let selector = FirstSelector(10);
+  let selector = RandomSelector(10);
 
   // simulated binary crossover for two `f32` values...
   let sbx_f32 = |a: f32, b: f32| -> S {
