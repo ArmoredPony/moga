@@ -1,7 +1,6 @@
 //! Binh and Korn problem solution using NSGA-II.
 
 #![allow(unused_variables)]
-use std::{fs::File, io::Write, path::Path};
 
 use moga::{
   optimizer::nsga::Nsga2,
@@ -87,20 +86,9 @@ fn main() {
   // consume and run the optimizer, returning the best solutions
   let solutions = nsga2.optimize();
 
-  // write solutions to file in examples/nsga2/binh_korn.csv
-  let _ = File::create(Path::new(file!()).with_file_name("binh_korn.csv"))
-    .unwrap()
-    .write_all(
-      solutions
-        .iter()
-        .map(|s| format!("{} {}", f1(s), f2(s)))
-        .collect::<Vec<_>>()
-        .join("\n")
-        .as_bytes(),
-    );
-
-  // print all found solutions
-  for (x, y) in solutions {
-    println!("{x:.4} {y:.4}");
+  // print values of objective functions for each solution
+  for s in solutions {
+    let [x, y] = test(&s);
+    println!("{x} {y}",);
   }
 }

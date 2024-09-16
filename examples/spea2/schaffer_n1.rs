@@ -66,8 +66,9 @@ fn main() {
         .as_bytes(),
     );
 
-  // print all found solutions
-  for x in solutions {
-    println!("{x:.4}");
+  // print values of objective functions for each solution
+  for s in solutions {
+    let [x, y] = test(&s);
+    println!("{x} {y}",);
   }
 }

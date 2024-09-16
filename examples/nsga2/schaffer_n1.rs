@@ -1,7 +1,5 @@
 //! Schaffer's Problem No.1 solution using NSGA-II.
 
-use std::{fs::File, io::Write, path::Path};
-
 use moga::{
   optimizer::nsga::Nsga2,
   selection::RandomSelector,
@@ -46,23 +44,9 @@ fn main() {
   // upon termination optimizer returns the best solutions it has found
   let solutions = nsga2.optimize();
 
-  // write solutions to file in examples/nsga2/binh_korn.csv
-  let _ = File::create(Path::new(file!()).with_file_name("schaffer_n1.csv"))
-    .unwrap()
-    .write_all(
-      solutions
-        .iter()
-        .map(|x| {
-          let [a, b] = test(x);
-          format!("{} {}", a, b)
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-        .as_bytes(),
-    );
-
-  // print all found solutions
-  for x in solutions {
-    println!("{x:.4}");
+  // print values of objective functions for each solution
+  for s in solutions {
+    let [x, y] = test(&s);
+    println!("{x} {y}",);
   }
 }
