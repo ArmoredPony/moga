@@ -241,7 +241,7 @@ impl<const N: usize, S> Selector<S, N> for RouletteSelector {
       .iter()
       .map(|sol| (sol, 0_usize))
       .collect::<Vec<_>>();
-    for p_idx in 0..scores.len() - 1 {
+    for p_idx in 0..scores.len() {
       let (p_sc, rest_scs) =
         scores[p_idx..].split_first().expect("no scores remain");
       for (i, q_sc) in rest_scs.iter().enumerate() {
@@ -339,27 +339,36 @@ mod tests {
 
   type Solution = f32;
 
-  fn takes_selector<ES, L: SelectionExecutor<Solution, 3, ES>>(l: &L) {
+  fn takes_selector<ES, L: SelectionExecutor<Solution, 2, ES>>(l: &L) {
+    l.execute_selection(
+      &[1.0, 2.0, 3.0], //
+      &[[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]],
+    );
+  }
+
+  fn takes_selector_empty<ES, L: SelectionExecutor<Solution, 2, ES>>(l: &L) {
     l.execute_selection(&[], &[]);
   }
 
   #[test]
   fn test_selection_from_closure() {
-    let selection = |_: &Solution, _: &Scores<3>| true;
+    let selection = |_: &Solution, _: &Scores<2>| true;
     takes_selector(&selection);
     takes_selector(&selection.par_each());
     takes_selector(&selection.par_batch());
+    takes_selector_empty(&selection);
   }
 
   #[test]
   fn test_selector_from_fn() {
     fn selector<'a>(
       solutions: &'a [Solution],
-      _: &[Scores<3>],
+      _: &[Scores<2>],
     ) -> Vec<&'a Solution> {
       solutions.iter().collect()
     }
     takes_selector(&selector);
+    takes_selector_empty(&selector);
   }
 
   // will work once `#![feature(closure_lifetime_binder)]`is stabilized already
@@ -378,8 +387,8 @@ mod tests {
   fn test_custom_selection() {
     #[derive(Clone, Copy)]
     struct CustomSelection {}
-    impl<S> Selection<S, 3> for CustomSelection {
-      fn select(&self, _: &S, _: &Scores<3>) -> bool {
+    impl<S> Selection<S, 2> for CustomSelection {
+      fn select(&self, _: &S, _: &Scores<2>) -> bool {
         true
       }
     }
@@ -388,37 +397,69 @@ mod tests {
     takes_selector(&selection);
     takes_selector(&selection.par_each());
     takes_selector(&selection.par_batch());
+    takes_selector_empty(&selection);
   }
 
   #[test]
   fn test_custom_selectior() {
     #[derive(Clone, Copy)]
     struct CustomSelector {}
-    impl<S> Selector<S, 3> for CustomSelector {
-      fn select<'a>(&self, solutions: &'a [S], _: &[Scores<3>]) -> Vec<&'a S> {
+    impl<S> Selector<S, 2> for CustomSelector {
+      fn select<'a>(&self, solutions: &'a [S], _: &[Scores<2>]) -> Vec<&'a S> {
         solutions.iter().collect()
       }
     }
 
     let selector = CustomSelector {};
     takes_selector(&selector);
+    takes_selector_empty(&selector);
   }
 
   #[test]
   fn test_all_selector() {
     let selector = AllSelector();
     takes_selector(&selector);
+    takes_selector_empty(&selector);
   }
 
   #[test]
   fn test_first_selector() {
     let selector = FirstSelector(10);
     takes_selector(&selector);
+    takes_selector_empty(&selector);
   }
 
   #[test]
   fn test_random_selector() {
     let selector = RandomSelector(10);
     takes_selector(&selector);
+    takes_selector_empty(&selector);
+  }
+
+  #[test]
+  fn test_roulette_selector() {
+    let selector = RouletteSelector(10);
+    takes_selector(&selector);
+    takes_selector_empty(&selector);
+  }
+
+  #[test]
+  fn test_tournament_selector_with_replacement() {
+    let selector = TournamentSelectorWithReplacement(10, 10);
+    takes_selector(&selector);
+  }
+
+  #[test]
+  #[should_panic(expected = "empty")]
+  fn test_tournament_selector_with_replacement_panic_on_empty() {
+    let selector = TournamentSelectorWithReplacement(10, 10);
+    takes_selector_empty(&selector);
+  }
+
+  #[test]
+  fn test_tournament_selector_without_replacement() {
+    let selector = TournamentSelectorWithoutReplacement(10, 10);
+    takes_selector(&selector);
+    takes_selector_empty(&selector);
   }
 }
