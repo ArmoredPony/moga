@@ -226,6 +226,43 @@ impl<const N: usize, S> Selector<S, N> for RandomSelector {
   }
 }
 
+/// Selects at most `n` random solutions proportionally to their number of
+/// dominations. The chance of choosing a solution is directly proportional to
+/// the number of solutions it dominates.
+///
+/// If `n` is bigger than the number of solutions, this selector selects all
+/// solutions.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct RouletteSelector(pub usize);
+
+impl<const N: usize, S> Selector<S, N> for RouletteSelector {
+  fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S> {
+    let mut sol_dominations = solutions
+      .iter()
+      .map(|sol| (sol, 0_usize))
+      .collect::<Vec<_>>();
+    for p_idx in 0..scores.len() - 1 {
+      let (p_sc, rest_scs) =
+        scores[p_idx..].split_first().expect("no scores remain");
+      for (i, q_sc) in rest_scs.iter().enumerate() {
+        let q_idx = p_idx + i + 1;
+        match p_sc.dominance(q_sc) {
+          std::cmp::Ordering::Less => sol_dominations[p_idx].1 += 1,
+          std::cmp::Ordering::Greater => sol_dominations[q_idx].1 += 1,
+          std::cmp::Ordering::Equal => {}
+        }
+      }
+    }
+    sol_dominations
+      .choose_multiple_weighted(&mut rand::thread_rng(), self.0, |sol_dom| {
+        sol_dom.1 as f64
+      })
+      .expect("bad weight was encountered during roulette selection")
+      .map(|sol_dom| sol_dom.0)
+      .collect::<Vec<_>>()
+  }
+}
+
 /// Selects at most `n` solutions from random chunks of *unique* solutions of
 /// size `k`. Each solution can be selected only once.
 ///
