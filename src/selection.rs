@@ -215,8 +215,8 @@ pub struct RandomSelector(pub usize);
 impl<const N: usize, S> Selector<S, N> for RandomSelector {
   fn select<'a>(&self, solutions: &'a [S], _: &[Scores<N>]) -> Vec<&'a S> {
     solutions
-      .iter()
       .choose_multiple(&mut rand::thread_rng(), self.0)
+      .collect()
   }
 }
 
