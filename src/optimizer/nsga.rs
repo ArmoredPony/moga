@@ -20,6 +20,7 @@ use crate::{
 /// [NSGA-II]: https://cs.uwlax.edu/~dmathias/cs419/readings/NSGAIIElitistMultiobjectiveGA.pdf
 ///
 /// # Examples
+///
 /// *Schaffer's Problem No.1* solution.
 /// ```no_run
 /// # use rand::{seq::IteratorRandom, Rng};
@@ -35,15 +36,15 @@ use crate::{
 /// let population = (0..100).map(|i| i as f32).collect::<Vec<_>>();
 /// // objective functions `f1(x) = x^2` and `f2(x) = (x - 2)^2`
 /// let test = |x: &f32| [x.powf(2.0), (x - 2.0).powf(2.0)];
-/// // select 10 random solutions
+/// // a `Selector` that selects 10 random solutions
 /// let selector = RandomSelector(10);
 /// // for each pair of parents `x` and `y` create an offspring `o = x + r * (y - x)`
 /// // where `r` is a random value between -1 and 2
 /// let r = || rand::thread_rng().gen_range(-1.0..2.0);
 /// let recombinator = |x: &f32, y: &f32| x + r() * (y - x);
-/// // don't mutate solutions
+/// // a `Mutation` that does not mutate solutions
 /// let mutation = |_: &mut f32| {};
-/// // terminate after 100 generations
+/// // a `Termiantor` that terminates after 100 generations
 /// let terminator = GenerationTerminator(100);
 /// // a convinient builder with compile time verification from `typed-builder` crate
 /// let optimizer = Nsga2::builder()

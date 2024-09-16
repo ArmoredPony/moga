@@ -14,7 +14,56 @@ use crate::{
   testing::executor::TestExecutor,
 };
 
-/// TODO: add docs
+/// An implementation of an improved version of the Strength Pareto Evolutionary
+/// Algorithm - [SPEA-II].
+///
+/// [SPEA-II]: https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/145755/eth-24689-01.pdf
+///
+/// # Examples
+///
+/// *Schaffer's Problem No.1* solution.
+/// ```no_run
+/// # use rand::{seq::IteratorRandom, Rng};
+/// # use moga::{
+/// #  optimizer::spea::Spea2,
+/// #  selection::RouletteSelector,
+/// #  termination::GenerationTerminator,
+/// #  Optimizer,
+/// #  ParBatch,
+/// # };
+/// # fn main() {
+/// // initial solutions lie between 0 and 100
+/// let population = (0..100).map(|i| i as f32).collect::<Vec<_>>();
+/// // archive size of `Spea2` optimizer
+/// let archive_size = 100;
+/// // objective functions `f1(x) = x^2` and `f2(x) = (x - 2)^2`
+/// let test = |x: &f32| [x.powf(2.0), (x - 2.0).powf(2.0)];
+/// // a `Selector` that selects 10 random solutions. selection chance of a
+/// // solution is directly proportional to the number of solutions it dominates
+/// let selector = RouletteSelector(10);
+/// // for each pair of parents `x` and `y` create an offspring
+/// // `o = x + r * (y - x)` where `r` is a random value between -1 and 2
+/// let r = || rand::thread_rng().gen_range(-1.0..2.0);
+/// let recombinator = |x: &f32, y: &f32| x + r() * (y - x);
+/// // a `Mutation` that does not mutate solutions
+/// let mutation = |_: &mut f32| {};
+/// // a `Termiantor` that terminates after 100 generations
+/// let terminator = GenerationTerminator(100);
+/// // a convinient builder with compile time verification from `typed-builder` crate
+/// let spea2 = Spea2::builder()
+/// .population(population)
+/// .archive_size(archive_size)
+/// // `test` will be executed concurrently for each batch of solutions
+/// .tester(test.par_batch())
+/// .selector(selector)
+/// .recombinator(recombinator)
+/// .mutator(mutation)
+/// .terminator(terminator)
+/// .build();
+/// // upon termination optimizer returns the best solutions it has found
+/// let solutions = spea2.optimize();
+/// # }
+/// ```
 #[derive(TypedBuilder, Debug)]
 pub struct Spea2<
   Solution,
@@ -67,8 +116,6 @@ pub struct Spea2<
   recombinator: Rec,
   mutator: Mut,
   terminator: Ter,
-  #[builder(setter(skip), default = vec![])]
-  scores: Vec<Scores<OBJECTIVE_NUM>>,
   #[builder(setter(skip), default)]
   _solution: PhantomData<Solution>,
   #[builder(setter(skip), default)]
@@ -90,7 +137,7 @@ type StrengthValue = u32;
 /// Sum of strength values of dominating solutions and density.
 type Fitness = f64;
 /// Distance from k-th solution.
-type Distance = f64;
+type Distance = f32;
 
 impl<
     Solution: Clone,
@@ -177,64 +224,14 @@ impl<
       .map(|(idx, _)| idx)
       .collect();
 
-    // if there are more nondommed solutions than the archive can fit...
+    // if there are more nondommed solutions than the archive can fit, truncate
+    // solutions iteratively by their distance to k-th neighbor
     if nondommed_cnt >= self.archive_size {
       let k = ((solutions.len() + self.archive_size) as f32).sqrt() as usize;
       let dommed_sol_indices = new_sol_indicies.split_off(nondommed_cnt);
 
-      // DESIGN 1
-
-      let mut distances: Vec<(SolutionIndex, Vec<Distance>)> = (0
-        ..new_sol_indicies.len())
-        .map(|i| (i, Vec::with_capacity(new_sol_indicies.len() - 1)))
-        .collect();
-
-      // for i in 0..new_sol_indicies.len() {
-      //   let (p_idx, rest) = new_sol_indicies[i..]
-      //     .split_first()
-      //     .expect("no solutions remain");
-
-      //   for (j, q_idx) in rest.iter().enumerate() {
-      //     let j = i + j + 1;
-      //     let p_sc = scores[*p_idx];
-      //     let q_sc = scores[*q_idx];
-      //     let d = p_sc
-      //       .iter()
-      //       .zip(q_sc)
-      //       .map(|(a, b)| (a - b).powf(2.0) as f64)
-      //       .sum();
-      //     distances[i].1.push(d);
-      //     distances[j].1.push(d);
-      //   }
-      //   for d_idx in &dommed_sol_indices {
-      //     if distances[i].1.len() >= k {
-      //       break;
-      //     }
-      //     let p_sc = scores[*p_idx];
-      //     let d_sc = scores[*d_idx];
-      //     let d = p_sc
-      //       .iter()
-      //       .zip(d_sc)
-      //       .map(|(a, b)| (a - b).powf(2.0) as f64)
-      //       .sum();
-      //     distances[i].1.push(d);
-      //   }
-      //   distances[i]
-      //     .1
-      //     .sort_unstable_by(|a, b| a.partial_cmp(b).expect("NaN encountered"));
-      // }
-      // distances
-      //   .sort_by(|a, b| b.1[k].partial_cmp(&a.1[k]).expect("NaN encountered"));
-      // new_sol_indicies = distances
-      //   .into_iter()
-      //   .take(self.archive_size)
-      //   .map(|(idx, _)| idx)
-      //   .collect();
-
-      // DESIGN 2
-
       while new_sol_indicies.len() > self.archive_size {
-        let mut distances: Vec<(SolutionIndex, Vec<f32>)> = (0
+        let mut distances: Vec<(SolutionIndex, Vec<Distance>)> = (0
           ..new_sol_indicies.len())
           .map(|i| (i, Vec::with_capacity(new_sol_indicies.len() - 1)))
           .collect();
@@ -248,11 +245,12 @@ impl<
             let j = i + j + 1;
             let p_sc = scores[*p_idx];
             let q_sc = scores[*q_idx];
-            let d: f32 =
+            let d: Distance =
               p_sc.iter().zip(q_sc).map(|(a, b)| (a - b).powf(2.0)).sum();
             distances[i].1.push(d);
             distances[j].1.push(d);
           }
+
           for d_idx in &dommed_sol_indices {
             if distances[i].1.len() >= k {
               break;
@@ -263,11 +261,12 @@ impl<
               p_sc.iter().zip(d_sc).map(|(a, b)| (a - b).powf(2.0)).sum();
             distances[i].1.push(d);
           }
+
           distances[i].1.sort_unstable_by(|a, b| {
             a.partial_cmp(b).expect("NaN encountered")
           });
-          distances[i].1.truncate(k);
         }
+
         distances.sort_by(|a, b| {
           a.1[k - 1]
             .partial_cmp(&b.1[k - 1])
@@ -352,7 +351,7 @@ impl<
   >
 {
   /// Runs SPEA-II `Optimizer` until the termination condition is met, then
-  /// returns the last found population.
+  /// returns nondominated solutions.
   ///
   /// # Panics
   ///
@@ -378,6 +377,7 @@ impl<
         archive.len(),
         "the number of calculated fitness scores doesn't match size of the population"
       );
+
       let (survived_solutions, survived_scores) =
         self.environmental_selection(archive, archive_scores);
       let selected_solutions = self
@@ -407,6 +407,7 @@ impl<
         }
       }
     }
+
     archive
       .into_iter()
       .zip(selected_sols)
