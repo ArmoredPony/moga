@@ -274,7 +274,7 @@ impl<const N: usize, S> Selector<S, N> for RouletteSelector {
 ///
 /// # Panics
 ///
-/// Will panic in runtime if `k` is 0.
+/// Will cause panic in runtime if `k` is 0.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct TournamentSelectorWithoutReplacement(pub usize, pub usize);
 
@@ -311,7 +311,7 @@ impl<const N: usize, S> Selector<S, N>
 ///
 /// # Panics
 ///
-/// Will panic in runtime if `k` is 0.
+/// Will cause panic in runtime if `k` is 0.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct TournamentSelectorWithReplacement(pub usize, pub usize);
 

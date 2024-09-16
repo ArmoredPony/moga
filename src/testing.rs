@@ -106,8 +106,8 @@ pub trait Tester<S, const N: usize> {
   ///
   /// # Panics
   ///
-  /// Doesn't panic itself but the **test executor** will panic if this function
-  /// returns a different number of scores than the number of solutions.
+  /// Doesn't panic itself but will cause panic during optimization if this
+  /// function returns a different number of scores than the number of solutions.
   fn test(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }
 

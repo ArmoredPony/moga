@@ -1,5 +1,5 @@
-cd examples
 export def main [opt: string, test: string] {
+  cd examples
   let filename = $opt ++ _ ++ $test
   cargo run --example $filename --release
     | $in ++ "\ne"
