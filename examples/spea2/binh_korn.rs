@@ -5,18 +5,13 @@ use std::{fs::File, io::Write, path::Path};
 
 use moga::{
   optimizer::spea::Spea2,
-  selection::{
-    FirstSelector,
-    RandomSelector,
-    TournamentSelectorWithReplacement,
-    TournamentSelectorWithoutReplacement,
-  },
+  selection::TournamentSelectorWithoutReplacement,
   termination::GenerationTerminator,
   Optimizer,
   ParBatch,
   ParEach,
 };
-use rand::{seq::IteratorRandom, Rng};
+use rand::Rng;
 use rand_distr::{Distribution, Normal};
 
 fn main() {
@@ -47,8 +42,8 @@ fn main() {
   // a `Terminator` that terminates after 1000 generations
   let terminator = GenerationTerminator(1000);
 
-  // a `Selector` that selects 10 values randomly
-  let selector = RandomSelector(10);
+  // a `Selector` that selects 10 unique solutions from 10 binary tournaments
+  let selector = TournamentSelectorWithoutReplacement(10, 2);
 
   // simulated binary crossover for two `f32` values...
   let sbx_f32 = |a: f32, b: f32| -> S {
@@ -82,12 +77,12 @@ fn main() {
     .population(population)
     .archive_size(archive_size)
     // fitness values will be evaluated concurrently for each solution
-    .tester(test)
+    .tester(test.par_each())
     .selector(selector)
     .recombinator(recombination)
     // solutions will be split in batches of optimal size, then the mutation
     // operator will be applied to solutions in each batch concurrently
-    .mutator(mutation)
+    .mutator(mutation.par_batch())
     .terminator(terminator)
     .build();
 
@@ -106,13 +101,8 @@ fn main() {
         .as_bytes(),
     );
 
-  // print 10 random solutions
-  println!("   x   |   y   ");
-  for (x, y) in solutions
-    .into_iter()
-    .choose_multiple(&mut rand::thread_rng(), 10)
-  {
-    println!("{x:.4} | {y:.4}");
+  // print all found solutions
+  for (x, y) in solutions {
+    println!("{x:.4} {y:.4}");
   }
-  println!("  ...  |  ...  ");
 }

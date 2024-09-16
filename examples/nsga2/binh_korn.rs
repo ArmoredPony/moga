@@ -11,7 +11,7 @@ use moga::{
   ParBatch,
   ParEach,
 };
-use rand::{seq::IteratorRandom, Rng};
+use rand::Rng;
 use rand_distr::{Distribution, Normal};
 
 fn main() {
@@ -99,13 +99,8 @@ fn main() {
         .as_bytes(),
     );
 
-  // print 10 random solutions
-  println!("   x   |   y   ");
-  for (x, y) in solutions
-    .into_iter()
-    .choose_multiple(&mut rand::thread_rng(), 10)
-  {
-    println!("{x:.4} | {y:.4}");
+  // print all found solutions
+  for (x, y) in solutions {
+    println!("{x:.4} {y:.4}");
   }
-  println!("  ...  |  ...  ");
 }
