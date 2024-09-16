@@ -197,8 +197,11 @@ impl<const N: usize, S> Selector<S, N> for AllSelector {
   }
 }
 
-/// Selects `n` first solutions. 'First' doesn't mean the best, this selector
-/// just returns `n` solutions it sees first.
+/// Selects at most `n` first solutions. 'First' doesn't mean the best, this
+/// selector just returns `n` solutions it meets first.
+///
+/// If `n` is bigger than the number of solutions, this selector selects all
+/// solutions.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct FirstSelector(pub usize);
 
@@ -208,7 +211,10 @@ impl<const N: usize, S> Selector<S, N> for FirstSelector {
   }
 }
 
-/// Selects `n` random solutions.
+/// Selects at most `n` random solutions.
+///
+/// If `n` is bigger than the number of solutions, this selector selects all
+/// solutions.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct RandomSelector(pub usize);
 
