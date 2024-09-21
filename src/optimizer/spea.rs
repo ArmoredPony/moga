@@ -139,7 +139,7 @@ type Fitness = f64;
 type Distance = f64;
 
 impl<
-    Solution: Clone,
+    Solution,
     Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
     Sel: SelectionExecutor<Solution, OBJECTIVE_NUM, SelExecStrat>,
     Rec: RecombinationExecutor<Solution, PARENT_NUM, OFFSPRING_NUM, RecExecStrat>,
@@ -337,7 +337,7 @@ fn sorted_sol_distances<const N: usize>(
 }
 
 impl<
-    Solution: Clone,
+    Solution,
     Tst: TestExecutor<Solution, OBJECTIVE_NUM, TstExecStrat>,
     Sel: SelectionExecutor<Solution, OBJECTIVE_NUM, SelExecStrat>,
     Rec: RecombinationExecutor<Solution, PARENT_NUM, OFFSPRING_NUM, RecExecStrat>,
