@@ -1,11 +1,10 @@
 //! Schaffer's Problem No.1 solution using NSGA-II.
 
 use moga::{
-  optimizer::nsga::Nsga2,
+  operator::ParBatch,
+  optimizer::{nsga::Nsga2, Optimizer},
   selection::RandomSelector,
   termination::GenerationTerminator,
-  Optimizer,
-  ParBatch,
 };
 use rand::Rng;
 

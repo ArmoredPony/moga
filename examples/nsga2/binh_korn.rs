@@ -3,12 +3,10 @@
 #![allow(unused_variables)]
 
 use moga::{
-  optimizer::nsga::Nsga2,
+  operator::{ParBatch, ParEach},
+  optimizer::{nsga::Nsga2, Optimizer},
   selection::RandomSelector,
   termination::GenerationTerminator,
-  Optimizer,
-  ParBatch,
-  ParEach,
 };
 use rand::Rng;
 use rand_distr::{Distribution, Normal};

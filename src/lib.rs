@@ -118,15 +118,14 @@
 //! framework's workflow and manages to find Pareto optimal solutions for that
 //! problem.
 //! ```no_run
-//! # use rand::{seq::IteratorRandom, Rng};
-//! # use moga::{
-//! #  optimizer::nsga::Nsga2,
-//! #  selection::RandomSelector,
-//! #  termination::GenerationTerminator,
-//! #  Optimizer,
-//! #  ParBatch,
-//! # };
 //! # fn main() {
+//! use moga::{
+//!   operator::ParBatch,
+//!   optimizer::{nsga::Nsga2, Optimizer},
+//!   selection::RandomSelector,
+//!   termination::GenerationTerminator,
+//! };
+//! use rand::Rng;
 //! // initial solutions lie between 0 and 100
 //! let population = (0..100).map(|i| i as f32).collect::<Vec<_>>();
 //! // objective functions `f1(x) = x^2` and `f2(x) = (x - 2)^2`
@@ -221,17 +220,3 @@ pub mod score;
 pub mod selection;
 pub mod termination;
 pub mod testing;
-
-// common operators and traits are re-exported by the crate. the less common
-// ones, along with optimizer implementations, must be imported from their
-// respective modules.
-pub use self::{
-  mutation::{Mutation, Mutator},
-  operator::{ParBatch, ParBatchOperator, ParEach, ParEachOperator},
-  optimizer::Optimizer,
-  recombination::{Recombination, Recombinator},
-  score::{Score, Scores},
-  selection::{Selection, Selector},
-  termination::{Termination, Terminator},
-  testing::{Test, Tester},
-};

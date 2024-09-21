@@ -1,11 +1,10 @@
 //! Schaffer's Problem No.1 solution using SPEA-II.
 
 use moga::{
-  optimizer::spea::Spea2,
+  operator::ParBatch,
+  optimizer::{spea::Spea2, Optimizer},
   selection::RouletteSelector,
   termination::GenerationTerminator,
-  Optimizer,
-  ParBatch,
 };
 use rand::Rng;
 

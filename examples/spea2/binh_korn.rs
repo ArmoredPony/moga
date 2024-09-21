@@ -3,12 +3,10 @@
 #![allow(unused_variables)]
 
 use moga::{
-  optimizer::spea::Spea2,
+  operator::{ParBatch, ParEach},
+  optimizer::{spea::Spea2, Optimizer},
   selection::TournamentSelectorWithoutReplacement,
   termination::GenerationTerminator,
-  Optimizer,
-  ParBatch,
-  ParEach,
 };
 use rand::Rng;
 use rand_distr::{Distribution, Normal};

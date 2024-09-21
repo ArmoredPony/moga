@@ -23,15 +23,14 @@ use crate::{
 ///
 /// *Schaffer's Problem No.1* solution.
 /// ```no_run
-/// # use rand::{seq::IteratorRandom, Rng};
-/// # use moga::{
-/// #  optimizer::spea::Spea2,
-/// #  selection::RouletteSelector,
-/// #  termination::GenerationTerminator,
-/// #  Optimizer,
-/// #  ParBatch,
-/// # };
 /// # fn main() {
+/// use rand::Rng;
+/// use moga::{
+///   operator::ParBatch,
+///   optimizer::{spea::Spea2, Optimizer},
+///   selection::RouletteSelector,
+///   termination::GenerationTerminator,
+/// };
 /// // initial solutions lie between 0 and 100
 /// let population = (0..100).map(|i| i as f32).collect::<Vec<_>>();
 /// // archive size of `Spea2` optimizer
