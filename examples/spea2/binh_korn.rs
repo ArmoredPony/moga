@@ -1,7 +1,5 @@
 //! Binh and Korn problem solution using SPEA-II.
 
-#![allow(unused_variables)]
-
 use moga::{
   operator::{ParBatch, ParEach},
   optimizer::{spea::Spea2, Optimizer},
@@ -12,29 +10,37 @@ use rand::Rng;
 use rand_distr::{Distribution, Normal};
 
 fn main() {
-  // our 'solution' type represented by a pair of floating point valeus
-  type S = (f32, f32);
+  // the 'Solution' type represented by a pair of floating point values
+  struct Solution {
+    x: f32,
+    y: f32,
+  }
 
-  // initial population
-  let population: Vec<S> = (0i8..100).map(|i| (i.into(), i.into())).collect();
+  // the initial population
+  let population: Vec<Solution> = (0i8..100)
+    .map(|i| Solution {
+      x: i.into(),
+      y: i.into(),
+    })
+    .collect();
 
-  // archive size of `Spea2` optimizer
+  // the archive size of `Spea2` optimizer
   let archive_size = population.len();
 
-  // objective function f1(x, y) = 4x^2 + 4y^2
-  let f1 = |&(a, b): &S| 4.0 * a.powf(2.0) + 4.0 * b.powf(2.0);
-  // and another objective function f2(x, y) = (x - 5)^2 + (y - 5)^2
-  let f2 = |&(a, b): &S| (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0);
+  // the second objective function f1(x, y) = 4x^2 + 4y^2
+  let f1 = |s: &Solution| 4.0 * s.x.powf(2.0) + 4.0 * s.y.powf(2.0);
+  // and the second objective function f2(x, y) = (x - 5)^2 + (y - 5)^2
+  let f2 = |s: &Solution| (s.x - 5.0).powf(2.0) + (s.y - 5.0).powf(2.0);
 
-  // array of closures forms a `Test`
-  let test = [f1, f2];
+  // an array of closures forms a `Test`
+  let _test = [f1, f2];
 
   // you can also create a `Test` from a closure that returns an array
   // instead of using array of closures
-  let test = |&(a, b): &S| {
+  let test = |s: &Solution| {
     [
-      4.0 * a.powf(2.0) + 4.0 * b.powf(2.0),
-      (a - 5.0).powf(2.0) + (b - 5.0).powf(2.0),
+      4.0 * s.x.powf(2.0) + 4.0 * s.y.powf(2.0),
+      (s.x - 5.0).powf(2.0) + (s.y - 5.0).powf(2.0),
     ]
   };
 
@@ -45,7 +51,7 @@ fn main() {
   let selector = TournamentSelectorWithoutReplacement(10, 2);
 
   // simulated binary crossover for two `f32` values...
-  let sbx_f32 = |a: f32, b: f32| -> S {
+  let sbx_f32 = |a: f32, b: f32| -> (f32, f32) {
     let n = 2.0;
     let r: f32 = rand::thread_rng().gen_range(0.0..1.0);
     let beta = if r <= 0.5 {
@@ -58,17 +64,17 @@ fn main() {
     (p, q)
   };
   // which is applied to both solutions' values by `Recombination` operator
-  let recombination = |(x1, y1): &S, (x2, y2): &S| -> (S, S) {
-    let (x3, x4) = sbx_f32(*x1, *x2);
-    let (y3, y4) = sbx_f32(*y1, *y2);
-    ((x3, y3), (x4, y4))
+  let recombination = |a: &Solution, b: &Solution| -> (Solution, Solution) {
+    let (x1, x2) = sbx_f32(a.x, b.x);
+    let (y1, y2) = sbx_f32(a.y, b.y);
+    (Solution { x: x1, y: y1 }, Solution { x: x2, y: y2 })
   };
 
   // a `Mutator` based on random values from normal disribution...
   let normal = Normal::new(0.0, 1.0).unwrap(); // which comes from 'rand_distr'
-  let mutation = |s: &mut S| {
-    s.0 += normal.sample(&mut rand::thread_rng());
-    s.1 += normal.sample(&mut rand::thread_rng());
+  let mutation = |s: &mut Solution| {
+    s.x += normal.sample(&mut rand::thread_rng());
+    s.y += normal.sample(&mut rand::thread_rng());
   };
 
   // a convinient builder with compile time verification from `typed-builder` crate
