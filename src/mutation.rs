@@ -42,9 +42,19 @@ where
   }
 }
 
-impl<S, M> ParEach<MutationOperatorTag, S, 0, 0> for M where M: Mutation<S> {}
+impl<S, M> ParEach<MutationOperatorTag, S, 0, 0> for M
+where
+  S: Sync + Send,
+  M: Mutation<S> + Sync,
+{
+}
 
-impl<S, M> ParBatch<MutationOperatorTag, S, 0> for M where M: Mutation<S> {}
+impl<S, M> ParBatch<MutationOperatorTag, S, 0> for M
+where
+  S: Sync + Send,
+  M: Mutation<S> + Sync,
+{
+}
 
 /// An operator that mutates all solutions.
 ///
@@ -98,7 +108,7 @@ where
 impl<S, M> MutationExecutor<S, ParallelEachExecutionStrategy>
   for ParEachOperator<MutationOperatorTag, S, M>
 where
-  S: Send + Sync,
+  S: Sync + Send,
   M: Mutation<S> + Sync,
 {
   fn execute_mutations(&self, solutions: &mut [S]) {
@@ -111,7 +121,7 @@ where
 impl<S, M> MutationExecutor<S, ParallelBatchExecutionStrategy>
   for ParBatchOperator<MutationOperatorTag, S, M>
 where
-  S: Send + Sync,
+  S: Sync + Send,
   M: Mutation<S> + Sync,
 {
   fn execute_mutations(&self, solutions: &mut [S]) {

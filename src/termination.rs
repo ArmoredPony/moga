@@ -44,13 +44,17 @@ where
   }
 }
 
-impl<S, const N: usize, T> ParEach<TerminationOperatorTag, S, N, 0> for T where
-  T: Termination<S, N>
+impl<S, const N: usize, T> ParEach<TerminationOperatorTag, S, N, 0> for T
+where
+  S: Sync,
+  T: Termination<S, N> + Sync,
 {
 }
 
-impl<S, const N: usize, T> ParBatch<TerminationOperatorTag, S, N> for T where
-  T: Termination<S, N>
+impl<S, const N: usize, T> ParBatch<TerminationOperatorTag, S, N> for T
+where
+  S: Sync,
+  T: Termination<S, N> + Sync,
 {
 }
 

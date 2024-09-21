@@ -70,13 +70,17 @@ where
   }
 }
 
-impl<S, const N: usize, T> ParEach<TestOperatorTag, S, N, 0> for T where
-  T: Test<S, N>
+impl<S, const N: usize, T> ParEach<TestOperatorTag, S, N, 0> for T
+where
+  S: Sync,
+  T: Test<S, N> + Sync,
 {
 }
 
-impl<S, const N: usize, T> ParBatch<TestOperatorTag, S, N> for T where
-  T: Test<S, N>
+impl<S, const N: usize, T> ParBatch<TestOperatorTag, S, N> for T
+where
+  S: Sync,
+  T: Test<S, N> + Sync,
 {
 }
 

@@ -87,7 +87,8 @@ recombination_fn_impl! {(S, S, S, S), (a, b, c, d), 4, (S, S, S, S), (m, n, o, p
 impl<S, R, const P: usize, const O: usize>
   ParEach<RecombinationOperatorTag, S, P, O> for R
 where
-  R: Recombination<S, P, O>,
+  S: Sync + Send,
+  R: Recombination<S, P, O> + Sync,
 {
 }
 
@@ -177,7 +178,7 @@ impl<S, const P: usize, const O: usize, R>
   for ParEachOperator<RecombinationOperatorTag, S, R>
 where
   S: Sync + Send,
-  R: Recombination<S, P, O> + Sync + Send,
+  R: Recombination<S, P, O> + Sync,
 {
   fn execute_recombination(&self, parents: Vec<&S>) -> Vec<S> {
     parents

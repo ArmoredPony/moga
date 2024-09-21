@@ -46,12 +46,16 @@ where
   }
 }
 
-impl<S, const N: usize, L> ParEach<SelectionOperatorTag, S, N, 0> for L where
-  L: Selection<S, N>
+impl<S, const N: usize, L> ParEach<SelectionOperatorTag, S, N, 0> for L
+where
+  S: Sync,
+  L: Selection<S, N> + Sync,
 {
 }
-impl<S, const N: usize, L> ParBatch<SelectionOperatorTag, S, N> for L where
-  L: Selection<S, N>
+impl<S, const N: usize, L> ParBatch<SelectionOperatorTag, S, N> for L
+where
+  S: Sync,
+  L: Selection<S, N> + Sync,
 {
 }
 
