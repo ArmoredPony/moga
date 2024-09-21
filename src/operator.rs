@@ -16,7 +16,7 @@ pub(crate) mod tag {
 }
 
 /// A wrapper around an operator that marks it to
-/// be executed in parallel for **each** solution by executor.
+/// be executed in parallel for **each** solution by the executor.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct ParEachOperator<OperatorTag, S, O> {
   operator: O,
@@ -35,7 +35,7 @@ impl<OperatorTag, S, O> ParEachOperator<OperatorTag, S, O> {
 /// This conversion is cheap and doesn't change operator's behavior. However,
 /// executors treat tagged operators differently.
 pub trait ParEach<OperatorTag, S, const N: usize, const M: usize> {
-  /// Creates a wrapper around given operator that marks it to
+  /// Creates a wrapper around the given operator that marks it to
   /// be executed in parallel for **each** solution.
   ///
   /// **Parallelization is implemented with [rayon]. As a result, for simple
@@ -54,7 +54,7 @@ pub trait ParEach<OperatorTag, S, const N: usize, const M: usize> {
 }
 
 /// A wrapper around an operator that marks it to
-/// be executed in parallel for each **batch** of solutions by executor.
+/// be executed in parallel for each **batch** of solutions by the executor.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct ParBatchOperator<OperatorTag, S, O> {
   operator: O,
@@ -73,7 +73,7 @@ impl<OperatorTag, S, O> ParBatchOperator<OperatorTag, S, O> {
 /// This conversion is cheap and doesn't change operator's behavior. However,
 /// executors treat tagged operators differently.
 pub trait ParBatch<OperatorTag, S, const N: usize> {
-  /// Creates a wrapper around given operator that marks it to
+  /// Creates a wrapper around the given operator that marks it to
   /// be executed in parallel for each **batch** of solutions.
   /// The crate calculates the size of the batch in such a way as to evenly
   /// distribute the calculations across all available threads. This is usually

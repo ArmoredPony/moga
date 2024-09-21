@@ -22,7 +22,7 @@ use crate::{
 /// Can be applied in parallel to each solution by converting it into a
 /// parallelized operator with `par_each()` method. `par_batch()` isn't
 /// supported for `Recombinator` ~~because I have no idea how to implement it
-/// efficently~~.
+/// efficiently~~.
 ///
 /// # Examples
 /// Any closure that take from 1 to 4 references to solutions and returns from
@@ -92,8 +92,8 @@ where
 {
 }
 
-/// An operator that recieves references to previously selected parents and
-/// recombinates them into a vector of offsprings. Created offsprings are passed
+/// An operator that receives references to previously selected parents and
+/// recombines them into a vector of offsprings. Created offsprings are passed
 /// into `Mutator`.
 ///
 /// # Examples

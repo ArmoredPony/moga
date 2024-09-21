@@ -15,13 +15,13 @@ use crate::{
   score::Scores,
 };
 
-/// An operator that tests solution's fitness, evaluating an array of its
+/// An operator that tests a solution's fitness, evaluating an array of its
 /// fitness scores.
 ///
-/// The target value of a score, which it converges at, is considered to be 0.
+/// The target value of a score, which it converges at, is considered to be `0`.
 /// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
 /// If it does not align with your actual goal values, rewrite your objective
-/// functions so they **do** converge at 0.
+/// functions so they **do** converge at `0`.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests
 /// must return an *array* of values. If you want to return a single value,

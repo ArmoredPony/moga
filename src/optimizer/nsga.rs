@@ -17,7 +17,7 @@ use crate::{
 /// An implementation of a fast and elitist multiobjective genetic algorithm -
 /// [NSGA-II].
 ///
-/// [NSGA-II]: https://cs.uwlax.edu/~dmathias/cs419/readings/NSGAIIElitistMultiobjectiveGA.pdf
+/// [NSGA-II]: https://sci2s.ugr.es/sites/default/files/files/Teaching/OtherPostGraduateCourses/Metaheuristicas/Deb_NSGAII.pdf
 ///
 /// # Examples
 ///
