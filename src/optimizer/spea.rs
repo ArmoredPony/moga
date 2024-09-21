@@ -225,16 +225,17 @@ impl<
         let mut nondom_idx_fit: Vec<_> =
           sol_idx_fit.into_iter().filter(|(_, f)| *f < 1.0).collect();
 
+        // get vector of distances for each solution
+        let mut sol_distances = sorted_sol_distances(&nondom_idx_fit, &scores);
         // while there are more solutions than the archive size...
         while nondom_idx_fit.len() > self.archive_size {
-          // get vector of distances for each solution
-          let sol_distances = sorted_sol_distances(&nondom_idx_fit, &scores);
           // find index of a solution with smallest distance to another solution
-          let removed_idx = sol_distances
+          let removed_sol_idx = sol_distances
             .iter()
-            .min_by(|a, b| {
+            .enumerate()
+            .min_by(|(_, a), (_, b)| {
               for (i, j) in a.1.iter().zip(b.1.iter()) {
-                match i.partial_cmp(j).expect("NaN encountered") {
+                match i.1.partial_cmp(&j.1).expect("NaN encountered") {
                   Ordering::Less => return Ordering::Less,
                   Ordering::Greater => return Ordering::Greater,
                   Ordering::Equal => {}
@@ -244,8 +245,22 @@ impl<
             })
             .expect("no solutions remain")
             .0;
+          // remove distances of removed solutions from distance matrix
+          let removed_dist_idx = sol_distances.remove(removed_sol_idx).0;
+          // for each other row in the distance matrix...
+          for distances in sol_distances.iter_mut() {
+            // find and remove distances to the removed solution
+            let removed_idx = distances
+              .1
+              .iter()
+              .enumerate()
+              .find(|(_, (i, _))| *i == removed_dist_idx)
+              .expect("distance matrix has no entry for removed solution")
+              .0;
+            distances.1.remove(removed_idx);
+          }
           // remove solution by this index
-          nondom_idx_fit.swap_remove(removed_idx);
+          nondom_idx_fit.remove(removed_sol_idx);
         }
 
         debug_assert_eq!(nondom_idx_fit.len(), self.archive_size);
@@ -256,7 +271,7 @@ impl<
         let sol_distances = sorted_sol_distances(&sol_idx_fit, &scores);
         let k = (sol_idx_fit.len() as f64).sqrt() as usize;
         sol_distances.into_iter().for_each(|(idx, distances)| {
-          sol_idx_fit[idx].1 += 1.0 / (distances[k - 1] + 2.0);
+          sol_idx_fit[idx].1 += 1.0 / (distances[k - 1].1 + 2.0);
         });
         // sort and truncate solutions. if there are less solutions than the
         // archive size, the archive will be partially filled
@@ -287,12 +302,13 @@ impl<
 
 /// Calculates and returns sorted distances between solutions.
 /// Each element of returned vector contains index of a solution from
-/// `sol_indices` and sorted vector of distances to other solutions.
+/// `sol_indices` and sorted vector of distances to other solutions paired with
+/// index of those solutions.
 #[inline]
 fn sorted_sol_distances<const N: usize>(
   sol_idx_fit: &[(SolutionIndex, Fitness)],
   scores: &[[f32; N]],
-) -> Vec<(SolutionIndex, Vec<Distance>)> {
+) -> Vec<(SolutionIndex, Vec<(SolutionIndex, Distance)>)> {
   let mut sol_distances: Vec<_> = (0..sol_idx_fit.len())
     .map(|i| (i, Vec::with_capacity(sol_idx_fit.len() - 1)))
     .collect();
@@ -310,13 +326,13 @@ fn sorted_sol_distances<const N: usize>(
         .zip(q_sc)
         .map(|(a, b)| (a - b).powf(2.0) as f64)
         .sum();
-      sol_distances[i].1.push(d);
-      sol_distances[j].1.push(d);
+      sol_distances[i].1.push((j, d));
+      sol_distances[j].1.push((i, d));
     }
 
     sol_distances[i]
       .1
-      .sort_unstable_by(|a, b| a.partial_cmp(b).expect("NaN encountered"));
+      .sort_unstable_by(|a, b| a.1.partial_cmp(&b.1).expect("NaN encountered"));
   }
   sol_distances
 }
@@ -398,6 +414,8 @@ impl<
       population_scores = created_scores;
     }
 
+    // if a flag is not set, the corresponding solution in the `archive` is
+    // dominated and is to be discarded
     let mut selected_sols = vec![true; archive.len()];
     for i in 0..selected_sols.len() - 1 {
       if !selected_sols[i] {
