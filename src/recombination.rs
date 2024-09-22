@@ -19,13 +19,13 @@ use crate::{
 /// `Recombination` `r` of type `Fn(&S, &S) -> S` will produce 3 values:
 /// `r(&a, &b)`, `r(&a, &c)` and `r(&b, &c)`.
 ///
-/// Can be applied in parallel to each solution by converting it into a
-/// parallelized operator with `par_each()` method. `par_batch()` isn't
+/// Can be applied in parallel to each group of solutions by converting it into
+/// a parallelized operator with `par_each()` method. `par_batch()` isn't
 /// supported for `Recombinator` ~~because I have no idea how to implement it
 /// efficiently~~.
 ///
 /// # Examples
-/// Any closure that take from 1 to 4 references to solutions and returns from
+/// Any closure that takes from 1 to 4 references to solutions and returns from
 /// 1 to 4 solutions is a `Recombinator`.
 /// ```
 /// # use moga::operator::*;

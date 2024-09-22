@@ -178,9 +178,9 @@
 //! ```
 //!
 //! You can find more examples in the *examples* folder in the root of the
-//! project. You can also write one yourself and contribute it to the crate. I'd
-//! be very grateful! Here is a list of functions that I hope to have covered
-//! one day:
+//! project's repository. You can also write one yourself and contribute it to
+//! the crate. I'd be very grateful! Here is a list of functions that I hope to
+//! have covered one day:
 //! <https://en.wikipedia.org/wiki/Test_functions_for_optimization>
 //!
 //! # Common pitfalls
