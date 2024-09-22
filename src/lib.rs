@@ -57,10 +57,10 @@
 //!
 //! |                            | Applied to all solutions | Applied to each solution<br>or group of solutions |
 //! |:---------------------------|:------------------------:|:-------------------------------------------------:|
-//! | **Test operator**          | [`Tester`]               | [`Test`]                                          |
 //! | **Selection operator**     | [`Selector`]             | [`Selection`]                                     |
 //! | **Recombination operator** | [`Recombinator`]         | [`Recombination`]                                 |
 //! | **Mutation operator**      | [`Mutator`]              | [`Mutation`]                                      |
+//! | **Test operator**          | [`Tester`]               | [`Test`]                                          |
 //! | **Termination operator**   | [`Terminator`]           | [`Termination`]                                   |
 //!
 //! Each pair of operators implements its respective **executor**. For example,
@@ -119,10 +119,10 @@
 //!
 //! |                   | Operator must implement | Solution must implement |
 //! |:------------------|:-----------------------:|:-----------------------:|
-//! | [`Test`]          | `Sync`                  | `Sync`                  |
 //! | [`Selection`]     | `Sync`                  | `Sync`                  |
 //! | [`Recombination`] | `Sync`                  | `Sync + Send`           |
 //! | [`Mutation`]      | `Sync`                  | `Sync + Send`           |
+//! | [`Test`]          | `Sync`                  | `Sync`                  |
 //! | [`Termination`]   | `Sync`                  | `Sync`                  |
 //!
 //! For simple operators, the overhead introduced by parallelization usually
