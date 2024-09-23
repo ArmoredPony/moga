@@ -247,7 +247,7 @@ impl<
         last_front.sort_by(|&a_idx, &b_idx| {
           scores[a_idx][o_idx]
             .partial_cmp(&scores[b_idx][o_idx])
-            .unwrap_or(Ordering::Greater) // sort NaNs away
+            .expect("NaN encountered")
         });
 
         // get the first and the last front members
