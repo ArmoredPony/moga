@@ -281,11 +281,6 @@ impl<
 
     new_solutions_indices.append(&mut last_front);
     new_solutions_indices.truncate(self.initial_population_size);
-    new_solutions_indices.sort_by(|&a_idx, &b_idx| {
-      front_numbers[a_idx]
-        .cmp(&front_numbers[b_idx])
-        .then(crowding_distances[b_idx].total_cmp(&crowding_distances[a_idx]))
-    });
 
     debug_assert_eq!(
       new_solutions_indices.len(),
