@@ -12,7 +12,7 @@ use crate::{
     ParEach,
     ParEachOperator,
   },
-  score::Scores,
+  score::{Score, Scores},
 };
 
 /// An operator that tests a solution's fitness, evaluating an array of its
@@ -22,7 +22,7 @@ use crate::{
 /// them instead, then multiply by `-1`.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests
-/// must return an *array* of values. If you want to return a single value,
+/// must return an *array* of scores. If you want to return a single score,
 /// wrap it in an array nonetheless.
 ///
 /// Can be applied in parallel to each solution or to batches of solutions
@@ -34,7 +34,7 @@ use crate::{
 /// # use moga::operator::*;
 /// let t = |f: &f32| [f * 2.0]; // only one objective
 /// let t = |f: &f32| [f + 1.0, f + 2.0, f + 3.0]; // 3 objectives
-/// // or use an array of closures that return a single value
+/// // or use an array of closures that return a single score
 /// let t = [
 ///   |f: &f32| f + 1.0,
 ///   |f: &f32| f * f + 2.0,
@@ -52,7 +52,7 @@ pub trait Test<S, const N: usize> {
 
 impl<S, const N: usize, F> Test<S, N> for [F; N]
 where
-  F: Fn(&S) -> f32,
+  F: Fn(&S) -> Score,
 {
   fn test(&self, solution: &S) -> Scores<N> {
     self.each_ref().map(|f| f(solution))
@@ -89,7 +89,7 @@ where
 /// them instead, then multiply by `-1`.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests
-/// must return an *array* of values. If you want to return a single value,
+/// must return an *array* of scores. If you want to return a single score,
 /// wrap it in an array nonetheless.
 ///
 /// # Examples

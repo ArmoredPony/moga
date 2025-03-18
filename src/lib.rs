@@ -51,7 +51,7 @@
 //! scores.
 //!
 //! Each **operator** is represented with two traits. One of them operates on
-//! whole arrays of solutions and their fitness values, another is applied to
+//! whole arrays of solutions and their fitness scores, another is applied to
 //! solutions and scores individually or, in case of [`Recombination`], to small
 //! groups of solutions. The table below lists those traits for each **operator**.
 //!

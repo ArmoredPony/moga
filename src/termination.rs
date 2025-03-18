@@ -24,8 +24,9 @@ use crate::{
 ///
 /// # Examples
 /// ```ignore
-/// // stop if all fitness values are equal to zero or a solution became negative
-/// let t = |f: &f32, v: &[f32; 3]| *f < 0.0 || v == &[0.0, 0.0, 0.0];
+/// // stop if all fitness scores are equal to zero or a solution became negative
+/// # use moga::score::Scores;
+/// let t = |f: &f32, s: &Scores<3>| *f < 0.0 || s == &[0.0, 0.0, 0.0];
 /// let t = t.par_batch();
 /// ```
 ///
@@ -63,7 +64,8 @@ where
 ///
 /// # Examples
 /// ```
-/// let t = |fs: &[f32], _: &[[f32; 3]]| fs.iter().all(|f| *f < 1.0);
+/// # use moga::score::Scores;
+/// let t = |_: &[f32], s: &[Scores<3>]| s.iter().any(|s| s[0] == 0.0);
 /// ```
 ///
 /// **Note that you always can implement this trait instead of using closures.**
@@ -210,7 +212,7 @@ mod tests {
   #[test]
   fn test_termination_from_closure() {
     let mut termination = |solution: &Solution, scores: &Scores<3>| {
-      *solution > 0.0 && scores.iter().sum::<f32>() == 0.0
+      *solution < 0.0 && scores.iter().sum::<f32>() == 0.0
     };
     takes_terminator(&mut termination);
     takes_terminator(&mut termination.par_each());
@@ -220,7 +222,7 @@ mod tests {
   #[test]
   fn test_terminatior_from_closure() {
     let mut terminator =
-      |fs: &[f32], _: &[[f32; 3]]| fs.iter().all(|f| *f < 1.0);
+      |fs: &[f32], _: &[Scores<3>]| fs.iter().all(|f| *f < 1.0);
     takes_terminator(&mut terminator);
   }
 

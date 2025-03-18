@@ -26,7 +26,7 @@ use crate::{
 ///
 /// # Examples
 /// ```ignore
-/// let s = |_: &f32, _: &[f32; 3]| true; // simply selects each solution
+/// let s = |_: &f32, _: &Scores<3>| true; // simply selects each solution
 /// let s = s.par_each();
 /// ```
 ///
@@ -69,7 +69,8 @@ where
 /// implement them using a `fn` function with a lifetime parameter:
 /// ```
 /// // selects all solutions for recombination
-/// fn selector<'a>(fs: &'a [f32], _: &[[f32; 3]]) -> Vec<&'a f32> {
+/// # use moga::score::Scores;
+/// fn selector<'a>(fs: &'a [f32], _: &[Scores<3>]) -> Vec<&'a f32> {
 ///   fs.iter().collect()
 /// }
 /// ```

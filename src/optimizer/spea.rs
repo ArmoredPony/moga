@@ -306,7 +306,7 @@ impl<
 #[inline]
 fn sorted_sol_distances<const N: usize>(
   sol_idx_fit: &[(SolutionIndex, Fitness)],
-  scores: &[[f32; N]],
+  scores: &[Scores<N>],
 ) -> Vec<(SolutionIndex, Vec<(SolutionIndex, Distance)>)> {
   let mut sol_distances: Vec<_> = (0..sol_idx_fit.len())
     .map(|i| (i, Vec::with_capacity(sol_idx_fit.len() - 1)))
