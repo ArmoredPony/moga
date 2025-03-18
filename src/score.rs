@@ -5,10 +5,8 @@ use std::cmp::Ordering;
 
 /// An alias for a fitness score.
 ///
-/// The target value of a score, which it converges at, is considered to be `0`.
-/// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
-/// If it does not align with your actual goal values, rewrite your objective
-/// functions so they **do** converge at `0`.
+/// The framework tries to minimize objectives' scores. If you want to maximize
+/// them instead, then multiply by `-1`.
 pub type Score = f32;
 
 /// An alias for an array of `N` values of `Score` type.
@@ -26,7 +24,7 @@ impl ParetoDominance for [Score] {
   fn dominance(&self, other: &Self) -> Ordering {
     let mut ord = Ordering::Equal;
     for (a, b) in self.iter().zip(other) {
-      match (ord, a.abs().partial_cmp(&b.abs()).expect("NaN encountered")) {
+      match (ord, a.partial_cmp(b).expect("NaN encountered")) {
         (Ordering::Equal, next_ord) => ord = next_ord,
         (Ordering::Greater, Ordering::Less)
         | (Ordering::Less, Ordering::Greater) => return Ordering::Equal,
@@ -73,18 +71,10 @@ mod tests {
       [1.0, 2.0, 30.0].dominance(&[1.0, 2.0, 3.0]),
       Ordering::Greater
     );
-    assert_eq!(
-      [-2.0, 2.0, -3.0].dominance(&[-1.0, 1.0, 2.0]),
-      Ordering::Greater
-    );
 
     assert_eq!([1.0, 2.0, 3.0].dominance(&[10.0, 2.0, 3.0]), Ordering::Less);
     assert_eq!([1.0, 2.0, 3.0].dominance(&[1.0, 20.0, 3.0]), Ordering::Less);
     assert_eq!([1.0, 2.0, 3.0].dominance(&[1.0, 2.0, 30.0]), Ordering::Less);
-    assert_eq!(
-      [-1.0, 2.0, -3.0].dominance(&[2.0, 2.0, 4.0]),
-      Ordering::Less
-    );
 
     assert_eq!([1.0; 0].dominance(&[0.0; 0]), Ordering::Equal);
   }

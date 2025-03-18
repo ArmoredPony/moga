@@ -18,10 +18,8 @@ use crate::{
 /// An operator that tests a solution's fitness, evaluating an array of its
 /// fitness scores.
 ///
-/// The target value of a score, which it converges at, is considered to be `0`.
-/// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
-/// If it does not align with your actual goal values, rewrite your objective
-/// functions so they **do** converge at `0`.
+/// The framework tries to minimize objectives' scores. If you want to maximize
+/// them instead, then multiply by `-1`.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests
 /// must return an *array* of values. If you want to return a single value,
@@ -48,7 +46,7 @@ use crate::{
 /// **Note that you always can implement this trait instead of using closures.**
 pub trait Test<S, const N: usize> {
   /// Returns an array of fitness scores for given solution.
-  /// The closer a score is to 0 - the better.
+  /// The lower the - the better.
   fn test(&self, solution: &S) -> Scores<N>;
 }
 
@@ -87,10 +85,8 @@ where
 /// An operator that tests solutions' fitness, evaluating an array of fitness
 /// scores for each solution.
 ///
-/// The target value of a score, which it converges at, is considered to be 0.
-/// Not `-infinity`, zero. `-5.0` is just as far from the ideal value as `5.0`.
-/// If it does not align with your actual goal values, rewrite your objective
-/// functions so they **do** converge at 0.
+/// The framework tries to minimize objectives' scores. If you want to maximize
+/// them instead, then multiply by `-1`.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests
 /// must return an *array* of values. If you want to return a single value,
@@ -106,7 +102,7 @@ where
 /// **Note that you always can implement this trait instead of using closures.**
 pub trait Tester<S, const N: usize> {
   /// Returns a vector of arrays of fitness scores for given solutions.
-  /// The closer a score is to 0 - the better.
+  /// The framework favours solutions with lower scores.
   ///
   /// # Panics
   ///
