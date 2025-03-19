@@ -85,10 +85,11 @@ fn main() {
     // operator will be applied to solutions in each batch concurrently
     .mutator(mutation.par_batch())
     .terminator(terminator)
-    .build();
+    .build()
+    .unwrap();
 
   // consume and run the optimizer, returning the best solutions
-  let solutions = nsga2.optimize();
+  let solutions = nsga2.optimize().unwrap();
 
   // print values of objective functions for each solution
   for s in solutions {

@@ -38,10 +38,11 @@ fn main() {
     .recombinator(recombinator)
     .mutator(mutation)
     .terminator(terminator)
-    .build();
+    .build()
+    .unwrap();
 
   // upon termination optimizer returns the best solutions it has found
-  let solutions = nsga2.optimize();
+  let solutions = nsga2.optimize().unwrap();
 
   // print values of objective functions for each solution
   for s in solutions {
