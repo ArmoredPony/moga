@@ -1,10 +1,10 @@
 //! Implementations of genetic algorithms of SPEA family.
 
-use std::{cmp::Ordering, marker::PhantomData, ops::Not};
+use std::{cmp::Ordering, error::Error, fmt::Display, marker::PhantomData};
 
 use typed_builder::TypedBuilder;
 
-use super::Optimizer;
+use super::{OptimizationError, Optimizer};
 use crate::{
   mutation::executor::MutationExecutor,
   recombination::executor::RecombinationExecutor,
@@ -49,18 +49,19 @@ use crate::{
 /// // a `Termiantor` that terminates after 100 generations
 /// let terminator = GenerationTerminator(100);
 /// // a convinient builder with compile time verification from `typed-builder` crate
-/// let spea2 = Spea2::builder()
-/// .population(population)
-/// .archive_size(archive_size)
-/// // `test` will be executed concurrently for each batch of solutions
-/// .tester(test.par_batch())
-/// .selector(selector)
-/// .recombinator(recombinator)
-/// .mutator(mutation)
-/// .terminator(terminator)
-/// .build();
+/// let optimizer = Spea2::builder()
+///   .population(population)
+///   .archive_size(archive_size)
+///   // `test` will be executed concurrently for each batch of solutions
+///   .tester(test.par_batch())
+///   .selector(selector)
+///   .recombinator(recombinator)
+///   .mutator(mutation)
+///   .terminator(terminator)
+///   .build();
 /// // upon termination optimizer returns the best solutions it has found
-/// let solutions = spea2.optimize();
+/// // or an error should it occur
+/// let solutions = optimizer.optimize().unwrap();
 /// # }
 /// ```
 #[derive(TypedBuilder, Debug)]
@@ -80,35 +81,8 @@ pub struct Spea2<
   const PARENT_NUM: usize,
   const OFFSPRING_NUM: usize,
 > {
-  #[builder(setter(
-    transform = |v: Vec<Solution>| {
-      v.is_empty()
-        .not()
-        .then_some(v)
-        .unwrap_or_else(|| panic!("initial population is empty"))
-    },
-    doc = "
-      The initial population setter.
-
-      # Panics
-
-      Panics if population is empty.",    
-  ))]
   population: Vec<Solution>,
-  #[builder(setter(
-    transform = |v: usize| {
-      if v == 0 {
-        panic!("archive size cannot be 0")
-      }
-      v
-    },
-    doc = "
-      The archive size setter.
-
-      # Panics
-
-      Panics if archive size is 0.",    
-  ))]
+  #[builder(default = population.len())]
   archive_size: usize,
   tester: Tst,
   selector: Sel,
@@ -371,12 +345,7 @@ impl<
 {
   /// Runs SPEA-II `Optimizer` until the termination condition is met, then
   /// returns nondominated solutions.
-  ///
-  /// # Panics
-  ///
-  /// Panic if at some point the population becomes empty, or the number of
-  /// scores doesn't match the population size.
-  fn optimize(mut self) -> Vec<Solution> {
+  fn optimize(mut self) -> Result<Vec<Solution>, OptimizationError> {
     let mut population = std::mem::take(&mut self.population);
     let mut population_scores = self.tester.execute_tests(&population);
 
@@ -390,12 +359,15 @@ impl<
       archive.append(&mut population);
       archive_scores.append(&mut population_scores);
 
-      assert!(!archive.is_empty(), "the population is empty");
-      assert_eq!(
-        archive_scores.len(),
-        archive.len(),
-        "the number of calculated fitness scores doesn't match size of the population"
-      );
+      if archive.is_empty() {
+        return Err(OptimizationError::PopulationEmpty);
+      }
+      if archive_scores.len() != archive.len() {
+        return Err(OptimizationError::ScoreCountMismatch {
+          actual: archive_scores.len(),
+          expected: archive.len(),
+        });
+      }
 
       let (survived_solutions, survived_scores) =
         self.environmental_selection(archive, archive_scores);
@@ -429,10 +401,112 @@ impl<
       }
     }
 
-    archive
-      .into_iter()
-      .zip(selected_sols)
-      .filter_map(|(sol, is_selected)| is_selected.then_some(sol))
-      .collect()
+    Ok(
+      archive
+        .into_iter()
+        .zip(selected_sols)
+        .filter_map(|(sol, is_selected)| is_selected.then_some(sol))
+        .collect::<Vec<_>>(),
+    )
+  }
+}
+
+/// An error which can be returned when building a SPEA-II optimizer.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum Spea2BuildError {
+  /// There are no solutions in the initial population.
+  InitialPopulationEmpty,
+  /// Size of SPEA-II archive is 0.
+  ArchiveSizeZero,
+}
+
+impl Display for Spea2BuildError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", match self {
+      Self::InitialPopulationEmpty => "initial population is empty",
+      Self::ArchiveSizeZero => "archive size is 0",
+    })
+  }
+}
+
+impl Error for Spea2BuildError {}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_creation_initial_population_empty() {
+    let population = Vec::<f32>::new(); // initial population is an empty vector
+    let test = |_: &f32| [0.0, 0.0, 0.0];
+    let selector = |_: &f32, _: &Scores<3>| true;
+    let recombinator = |_: &f32, _: &f32| 0.0;
+    let mutation = |_: &mut f32| {};
+    let terminator = |_: &f32, _: &Scores<3>| false;
+    let optimizer = Spea2::builder()
+      .population(population)
+      .tester(test)
+      .selector(selector)
+      .recombinator(recombinator)
+      .mutator(mutation)
+      .terminator(terminator)
+      .archive_size(100)
+      .build();
+
+    assert!(matches!(
+      optimizer.optimize(),
+      Err(OptimizationError::PopulationEmpty)
+    ))
+  }
+
+  #[test]
+  fn test_creation_archive_size_zero() {
+    let population = vec![0.0, 1.0, 2.0];
+    let test = |_: &f32| [0.0, 0.0, 0.0];
+    let selector = |_: &f32, _: &Scores<3>| true;
+    let recombinator = |_: &f32, _: &f32| 0.0;
+    let mutation = |_: &mut f32| {};
+    let terminator = |_: &f32, _: &Scores<3>| false;
+    let optimizer = Spea2::builder()
+      .population(population)
+      .tester(test)
+      .selector(selector)
+      .recombinator(recombinator)
+      .mutator(mutation)
+      .terminator(terminator)
+      .archive_size(0)
+      .build();
+
+    assert!(matches!(
+      optimizer.optimize(),
+      Err(OptimizationError::PopulationEmpty)
+    ))
+  }
+
+  #[test]
+  fn test_optimization_score_count_mismatch() {
+    let population = vec![0.0, 1.0, 2.0];
+    // returns less `Scores` than size of population
+    let tester = |_: &[f32]| vec![[0.0, 0.0, 0.0]];
+    let selection = |_: &f32, _: &Scores<3>| true;
+    let recombination = |_: &f32, _: &f32| 0.0;
+    let mutation = |_: &mut f32| {};
+    let termination = |_: &f32, _: &Scores<3>| false;
+    let optimizer = Spea2::builder()
+      .population(population)
+      .tester(tester)
+      .selector(selection)
+      .recombinator(recombination)
+      .mutator(mutation)
+      .terminator(termination)
+      .build();
+
+    assert!(matches!(
+      optimizer.optimize(),
+      Err(OptimizationError::ScoreCountMismatch {
+        actual: 1,
+        expected: 3
+      })
+    ))
   }
 }

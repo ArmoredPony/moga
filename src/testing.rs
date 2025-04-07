@@ -103,11 +103,6 @@ where
 pub trait Tester<S, const N: usize> {
   /// Returns a vector of arrays of fitness scores for given solutions.
   /// The framework favours solutions with lower scores.
-  ///
-  /// # Panics
-  ///
-  /// Doesn't panic itself but will cause panic during optimization if this
-  /// function returns a different number of scores than the number of solutions.
   fn test(&self, solutions: &[S]) -> Vec<Scores<N>>;
 }
 

@@ -1,10 +1,16 @@
 //! Implementations of genetic algorithms of NSGA family.
 
-use std::{cmp::Ordering, collections::HashSet, marker::PhantomData, ops::Not};
+use std::{
+  cmp::Ordering,
+  collections::HashSet,
+  error::Error,
+  fmt::{Debug, Display},
+  marker::PhantomData,
+};
 
 use typed_builder::TypedBuilder;
 
-use super::Optimizer;
+use super::{OptimizationError, Optimizer};
 use crate::{
   mutation::executor::MutationExecutor,
   recombination::executor::RecombinationExecutor,
@@ -56,7 +62,8 @@ use crate::{
 ///   .terminator(terminator)
 ///   .build();
 /// // upon termination the optimizer returns the best solutions it has found
-/// let solutions = optimizer.optimize();
+/// // or an error should it occur
+/// let solutions = optimizer.optimize().unwrap();
 /// # }
 /// ```
 #[derive(TypedBuilder, Debug)]
@@ -76,20 +83,6 @@ pub struct Nsga2<
   const PARENT_NUM: usize,
   const OFFSPRING_NUM: usize,
 > {
-  #[builder(setter(
-    transform = |v: Vec<Solution>| {
-      v.is_empty()
-        .not()
-        .then_some(v)
-        .unwrap_or_else(|| panic!("initial population is empty"))
-    },
-    doc = "
-      The initial population setter.
-
-      # Panics
-
-      Panics if population is empty.",    
-  ))]
   population: Vec<Solution>,
   tester: Tst,
   selector: Sel,
@@ -158,6 +151,7 @@ impl<
     OFFSPRING_NUM,
   >
 {
+  #[inline]
   fn crowding_distance_selection(
     &self,
     solutions: Vec<Solution>,
@@ -355,22 +349,20 @@ impl<
 {
   /// Runs NSGA-II `Optimizer` until the termination condition is met, then
   /// returns the last found population.
-  ///
-  /// # Panics
-  ///
-  /// Panic if at some point the population becomes empty, or the number of
-  /// scores doesn't match the population size.
-  fn optimize(mut self) -> Vec<Solution> {
+  fn optimize(mut self) -> Result<Vec<Solution>, OptimizationError> {
     let mut population = std::mem::take(&mut self.population);
     let mut scores = self.tester.execute_tests(&population);
 
     while !self.terminator.execute_termination(&population, &scores) {
-      assert!(!population.is_empty(), "the population is empty");
-      assert_eq!(
-        scores.len(),
-        population.len(),
-        "the number of calculated fitness scores doesn't match size of the population"
-      );
+      if population.is_empty() {
+        return Err(OptimizationError::PopulationEmpty);
+      }
+      if scores.len() != population.len() {
+        return Err(OptimizationError::ScoreCountMismatch {
+          actual: scores.len(),
+          expected: population.len(),
+        });
+      }
       let selected_population =
         self.selector.execute_selection(&population, &scores);
       let mut created_population =
@@ -385,6 +377,79 @@ impl<
         self.crowding_distance_selection(population, scores);
     }
 
-    population
+    Ok(population)
+  }
+}
+
+/// An error which can be returned when building a NSGA-II optimizer.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum Nsga2BuildError {
+  /// There are no solutions in the initial population.
+  InitialPopulationEmpty,
+}
+
+impl Display for Nsga2BuildError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", match self {
+      Self::InitialPopulationEmpty => "initial population is empty",
+    })
+  }
+}
+
+impl Error for Nsga2BuildError {}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_optimization_initial_population_empty() {
+    // initial population is an empty vector
+    let population = Vec::<f32>::new();
+    let test = |_: &f32| [0.0, 0.0, 0.0];
+    let selection = |_: &f32, _: &Scores<3>| true;
+    let recombination = |_: &f32, _: &f32| 0.0;
+    let mutation = |_: &mut f32| {};
+    let termination = |_: &f32, _: &Scores<3>| false;
+    let optimizer = Nsga2::builder()
+      .population(population)
+      .tester(test)
+      .selector(selection)
+      .recombinator(recombination)
+      .mutator(mutation)
+      .terminator(termination)
+      .build();
+
+    assert!(matches!(
+      optimizer.optimize(),
+      Err(OptimizationError::PopulationEmpty)
+    ))
+  }
+
+  #[test]
+  fn test_optimization_score_count_mismatch() {
+    let population = vec![0.0, 1.0, 2.0];
+    // returns less `Scores` than size of population
+    let tester = |_: &[f32]| vec![[0.0, 0.0, 0.0]];
+    let selection = |_: &f32, _: &Scores<3>| true;
+    let recombination = |_: &f32, _: &f32| 0.0;
+    let mutation = |_: &mut f32| {};
+    let termination = |_: &f32, _: &Scores<3>| false;
+    let optimizer = Nsga2::builder()
+      .population(population)
+      .tester(tester)
+      .selector(selection)
+      .recombinator(recombination)
+      .mutator(mutation)
+      .terminator(termination)
+      .build();
+
+    assert!(matches!(
+      optimizer.optimize(),
+      Err(OptimizationError::ScoreCountMismatch {
+        actual: 1,
+        expected: 3
+      })
+    ))
   }
 }

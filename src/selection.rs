@@ -1,5 +1,7 @@
 //! Selection operators and utilities.
 
+use std::num::NonZero;
+
 use executor::SelectionExecutor;
 use rand::prelude::*;
 use rayon::prelude::*;
@@ -274,35 +276,31 @@ impl<const N: usize, S> Selector<S, N> for RouletteSelector {
 /// From each chunk, the least dominated solution is selected. If there are
 /// multiple equally dominated solutions, a random one is selected.
 /// This selector selects one solution per a chunk, so it may select less than
-/// `n` solutions. If you want to select all solutions this selector can proide,
-/// set this value to `usize::MAX`.
-///
-/// # Panics
-///
-/// Will cause panic in runtime if `k` is 0.
+/// `n` solutions. If you want to select all solutions this selector can
+/// provide, set this value to `usize::MAX`.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct TournamentSelectorWithoutReplacement(pub usize, pub usize);
+pub struct TournamentSelectorWithoutReplacement(
+  pub NonZero<usize>,
+  pub NonZero<usize>,
+);
 
 impl<const N: usize, S> Selector<S, N>
   for TournamentSelectorWithoutReplacement
 {
   fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S> {
-    rand::seq::index::sample(
-      &mut rand::thread_rng(),
-      solutions.len(),
-      solutions.len(),
-    )
-    .into_vec()
-    .chunks(self.1)
-    .take(self.0)
-    .map(|chunk| {
-      chunk
-        .iter()
-        .min_by(|i, j| scores[**i].dominance(&scores[**j]))
-        .map(|idx| &solutions[*idx])
-        .expect("chunk must not be empty")
-    })
-    .collect()
+    let mut indicies = (0..solutions.len()).collect::<Vec<_>>();
+    indicies.shuffle(&mut rand::thread_rng());
+    indicies
+      .chunks(self.1.get())
+      .take(self.0.get())
+      .map(|chunk| {
+        chunk
+          .iter()
+          .min_by(|i, j| scores[**i].dominance(&scores[**j]))
+          .map(|idx| &solutions[*idx])
+          .expect("chunk must not be empty")
+      })
+      .collect()
   }
 }
 
@@ -313,21 +311,20 @@ impl<const N: usize, S> Selector<S, N>
 /// multiple equally dominated solutions, a random one is selected. If `k` is
 /// bigger than the number of solutions, all solutions will form a single chunk
 /// from which `n` solutions will be selected.
-///
-/// # Panics
-///
-/// Will cause panic in runtime if `k` is 0.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct TournamentSelectorWithReplacement(pub usize, pub usize);
+pub struct TournamentSelectorWithReplacement(
+  pub NonZero<usize>,
+  pub NonZero<usize>,
+);
 
 impl<const N: usize, S> Selector<S, N> for TournamentSelectorWithReplacement {
   fn select<'a>(&self, solutions: &'a [S], scores: &[Scores<N>]) -> Vec<&'a S> {
-    (0..self.0)
+    (0..self.0.get())
       .map(|_| {
         rand::seq::index::sample(
           &mut rand::thread_rng(),
           solutions.len(),
-          self.1.min(solutions.len()),
+          self.1.get().min(solutions.len()),
         )
         .iter()
         .min_by(|i, j| scores[*i].dominance(&scores[*j]))
@@ -450,20 +447,29 @@ mod tests {
 
   #[test]
   fn test_tournament_selector_with_replacement() {
-    let selector = TournamentSelectorWithReplacement(10, 10);
+    let selector = TournamentSelectorWithReplacement(
+      NonZero::new(10).unwrap(),
+      NonZero::new(10).unwrap(),
+    );
     takes_selector(&selector);
   }
 
   #[test]
   #[should_panic(expected = "empty")]
   fn test_tournament_selector_with_replacement_panic_on_empty() {
-    let selector = TournamentSelectorWithReplacement(10, 10);
+    let selector = TournamentSelectorWithReplacement(
+      NonZero::new(10).unwrap(),
+      NonZero::new(10).unwrap(),
+    );
     takes_selector_empty(&selector);
   }
 
   #[test]
   fn test_tournament_selector_without_replacement() {
-    let selector = TournamentSelectorWithoutReplacement(10, 10);
+    let selector = TournamentSelectorWithoutReplacement(
+      NonZero::new(10).unwrap(),
+      NonZero::new(10).unwrap(),
+    );
     takes_selector(&selector);
     takes_selector_empty(&selector);
   }

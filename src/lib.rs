@@ -173,7 +173,7 @@
 //!   .terminator(terminator)
 //!   .build();
 //! // upon termination optimizer returns the best solutions it has found
-//! let solutions = spea2.optimize();
+//! let solutions = spea2.optimize().unwrap();
 //! # }
 //! ```
 //!
@@ -193,7 +193,7 @@
 //! - [`Selection`] and [`Termination`] traits are implemented for the same
 //!   closure of type `Fn(&S, &[f32; N]) -> bool` which may confuse the compiler
 //!   (and you) from time to time. Move closures into an optimizer as soon as
-//!    possible, or, again, implement those traits for your own type.
+//!   possible, or, again, implement those traits for your own type.
 //! - More often than not, parallelization only decreases performance of the
 //!   algorithm. Currently, Rust does not provide any benchmarking utilities
 //!   "out-of-the-box", but you can use the tools that your OS has, like

@@ -10,7 +10,7 @@ version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-itertools = "0.13.0"
+itertools = "0.14.0"
 rand = { version = "0.8.5", default-features = false, features = [
     "std",
     "std_rng",

@@ -1,5 +1,7 @@
 //! Binh and Korn problem solution using SPEA-II.
 
+use std::num::NonZero;
+
 use moga::{
   operator::{ParBatch, ParEach},
   optimizer::{spea::Spea2, Optimizer},
@@ -48,7 +50,10 @@ fn main() {
   let terminator = GenerationTerminator(1000);
 
   // a `Selector` that selects 10 unique solutions from 10 binary tournaments
-  let selector = TournamentSelectorWithoutReplacement(10, 2);
+  let selector = TournamentSelectorWithoutReplacement(
+    NonZero::new(10).unwrap(),
+    NonZero::new(2).unwrap(),
+  );
 
   // simulated binary crossover for two `f32` values...
   let sbx_f32 = |a: f32, b: f32| -> (f32, f32) {
@@ -92,7 +97,7 @@ fn main() {
     .build();
 
   // consume and run the optimizer, returning the best solutions
-  let solutions = spea2.optimize();
+  let solutions = spea2.optimize().unwrap();
 
   // print values of objective functions for each solution
   for s in solutions {

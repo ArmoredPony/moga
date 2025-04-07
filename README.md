@@ -45,6 +45,7 @@ Here's a solution for the textbook *Schaffer's Problem No.1* with the [SPEA-II]
 optimizer. This solution is oversimplified and very suboptimal, but it
 demonstrates the framework's workflow and manages to find Pareto optimal
 solutions for that problem.
+
 ```rust
 use moga::{
   operator::ParBatch,
@@ -70,7 +71,7 @@ let recombinator = |x: &f32, y: &f32| x + r() * (y - x);
 let mutation = |_: &mut f32| {};
 // a `Termiantor` that terminates after 100 generations
 let terminator = GenerationTerminator(100);
-// a convinient builder with compile time verification from `typed-builder` crate
+// a builder with compile time verification from `typed-builder` crate
 let spea2 = Spea2::builder()
   .population(population)
   .archive_size(archive_size)
@@ -82,10 +83,13 @@ let spea2 = Spea2::builder()
   .terminator(terminator)
   .build();
 // upon termination optimizer returns the best solutions it has found
-let solutions = spea2.optimize();
+// or an error should it occur
+let solutions = spea2.optimize().unwrap();
 ```
+
 By calcualting objective functions' values for each solution and plotting them,
 we can make sure that found solutions are indeed Pareto optimal:
+
 ![spea2 schaffer_n1 plot](./examples/spea2/schaffer_n1.png)
 
 ## Use cases
