@@ -5,8 +5,8 @@ use std::cmp::Ordering;
 
 /// An alias for a fitness score.
 ///
-/// The framework tries to minimize objectives' scores. If you want to maximize
-/// them instead, then multiply by `-1`.
+/// Whenever the framework expects these scores, it tries to minimize them.
+/// If you want to maximize them instead, then multiply by `-1`.
 pub type Score = f32;
 
 /// An alias for an array of `N` values of `Score` type.

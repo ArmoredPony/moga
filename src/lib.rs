@@ -108,9 +108,19 @@
 //! will apply such **operator** in parallel to each solution/score or to their
 //! batches of equal size. And you can call these methods on closures too:
 //! ```
-//! # use moga::operator::*;
+//! # use moga::{operator::ParBatch, optimizer::nsga::Nsga2, score::Scores};
 //! let test = |f: &f32| [f + 1.0, f * 2.0];
 //! let par_test = test.par_batch();
+//! let optimizer = Nsga2::builder()
+//! #   .population(vec![])
+//! #   .selector(|_: &f32, _: &Scores<2>| true)
+//! #   .recombinator(|_: &f32, _: &f32| 0.0)
+//! #   .mutator(|_: &mut f32| {})
+//! #   .terminator(|_: &f32, _: &Scores<2>| false)
+//!   // ...
+//!   .tester(par_test)
+//!   // ...
+//!   .build();
 //! ```
 //!
 //! Note that to be parallelized, both **operators** and solutions must
@@ -226,6 +236,7 @@
 
 #![warn(missing_docs)]
 
+pub mod constraining;
 mod execution;
 pub mod mutation;
 pub mod operator;

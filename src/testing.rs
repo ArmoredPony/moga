@@ -15,10 +15,9 @@ use crate::{
   score::{Score, Scores},
 };
 
-/// An operator that tests a solution's fitness, evaluating an array of its
-/// fitness scores.
+/// An operator that tests a solution, evaluating an array of its fitness scores.
 ///
-/// The framework tries to minimize objectives' scores. If you want to maximize
+/// The framework tries to minimize fitness scores. If you want to maximize
 /// them instead, then multiply by `-1`.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests
@@ -32,6 +31,8 @@ use crate::{
 /// # Examples
 /// ```
 /// # use moga::operator::*;
+/// # use moga::optimizer::nsga::Nsga2;
+/// # use moga::score::Scores;
 /// let t = |f: &f32| [f * 2.0]; // only one objective
 /// let t = |f: &f32| [f + 1.0, f + 2.0, f + 3.0]; // 3 objectives
 /// // or use an array of closures that return a single score
@@ -40,13 +41,20 @@ use crate::{
 ///   |f: &f32| f * f + 2.0,
 ///   |f: &f32| f * f * f + 3.0,
 /// ];
-/// t.par_batch();
+/// let t = t.par_batch();
+/// # Nsga2::builder()
+/// #   .population(vec![])
+/// #   .tester(t)
+/// #   .selector(|_: &f32, _: &Scores<3>| true)
+/// #   .recombinator(|_: &f32, _: &f32| 0.0)
+/// #   .mutator(|_: &mut f32| {})
+/// #   .terminator(|_: &f32, _: &Scores<3>| false);
 /// ```
 ///
 /// **Note that you always can implement this trait instead of using closures.**
 pub trait Test<S, const N: usize> {
   /// Returns an array of fitness scores for given solution.
-  /// The lower the - the better.
+  /// The lower the score - the better.
   fn test(&self, solution: &S) -> Scores<N>;
 }
 
@@ -82,10 +90,10 @@ where
 {
 }
 
-/// An operator that tests solutions' fitness, evaluating an array of fitness
-/// scores for each solution.
+/// An operator that tests solutions, evaluating an array of fitness scores for
+/// each solution.
 ///
-/// The framework tries to minimize objectives' scores. If you want to maximize
+/// The framework tries to minimize fitness scores. If you want to maximize
 /// them instead, then multiply by `-1`.
 ///
 /// This crate's purpose is *multi-objective* optimizations, that's why tests

@@ -82,8 +82,6 @@ where
 /// want to create your own selector after all, consider implementing `Selector`
 /// trait.
 ///
-/// **Note that you probably want to implement this trait instead of using closures.**
-///
 /// [closure lifetime binders]: https://rust-lang.github.io/rfcs/3216-closure-lifetime-binder.html
 /// [it doesn't feel like]: https://github.com/rust-lang/rust/issues/97362
 pub trait Selector<S, const N: usize> {

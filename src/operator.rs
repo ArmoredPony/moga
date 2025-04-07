@@ -13,6 +13,8 @@ pub(crate) mod tag {
   pub enum MutationOperatorTag {}
   #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
   pub enum TerminationOperatorTag {}
+  #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+  pub enum ConstraintOperatorTag {}
 }
 
 /// A wrapper around an operator that marks it to
